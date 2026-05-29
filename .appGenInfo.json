@@ -1,0 +1,32 @@
+{
+  "generationParameters": {
+    "generationDate": "Tue Apr 28 2026 08:42:03 GMT-0400 (Eastern Daylight Time)",
+    "generatorPlatform": "Visual Studio Code",
+    "serviceType": "OData URL",
+    "metadataFilename": "",
+    "serviceUrl": "https://tmqpas01.agr.gc.ca:44333/sap/opu/odata4/sap/zqmm_ui_audit_header_v4/srvd/sap/zqmm_ui_audit_header/0001",
+    "appName": "eq-audit-mng",
+    "appTitle": "Manage Equipment Audit ",
+    "appDescription": "Manage Equipment Audit ",
+    "appNamespace": "gc.agr.aafc.mm",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.120.32",
+    "enableEslint": false,
+    "enableTypeScript": false,
+    "showMockDataInfo": true,
+    "generatorVersion": "1.20.4",
+    "template": "List Report Page V4",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [
+      {
+        "type": "Main Entity",
+        "value": "ZQMM_C_Audit_Header"
+      },
+      {
+        "type": "Navigation Entity",
+        "value": "None"
+      }
+    ],
+    "launchText": "To launch the generated application, run the following from the generated application root folder:\n\n```\n    npm start\n```"
+  }
+}
