@@ -59,7 +59,8 @@
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
-        "sap.fe.templates": {}
+        "sap.fe.templates": {},
+        "sap.f": {}
       }
     },
     "contentDensities": {
@@ -91,17 +92,28 @@
       "css": []
     },
     "routing": {
-      "config": {},
+      "config": {
+        "flexibleColumnLayout": {
+          "defaultTwoColumnLayoutType": "TwoColumnsBeginExpanded",
+          "defaultThreeColumnLayoutType": "ThreeColumnsMidExpanded"
+        },
+        "routerClass": "sap.f.routing.Router"
+      },
       "routes": [
         {
           "pattern": ":?query:",
           "name": "ZQMM_C_Audit_HeaderList",
-          "target": "ZQMM_C_Audit_HeaderList"
+          "target": [
+            "ZQMM_C_Audit_HeaderList"
+          ]
         },
         {
           "pattern": "ZQMM_C_Audit_Header({key}):?query:",
           "name": "ZQMM_C_Audit_HeaderObjectPage",
-          "target": "ZQMM_C_Audit_HeaderObjectPage"
+          "target": [
+            "ZQMM_C_Audit_HeaderList",
+            "ZQMM_C_Audit_HeaderObjectPage"
+          ]
         }
       ],
       "targets": {
@@ -137,7 +149,9 @@
                 }
               }
             }
-          }
+          },
+          "controlAggregation": "beginColumnPages",
+          "contextPattern": ""
         },
         "ZQMM_C_Audit_HeaderObjectPage": {
           "type": "Component",
@@ -146,9 +160,27 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/ZQMM_C_Audit_Header"
+              "contextPath": "/ZQMM_C_Audit_Header",
+              "controlConfiguration": {
+                "_Items/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable"
+                  },
+                  "actions": {
+                    "BarcodeScan": {
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onBarcodeScan",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "text": "Barcode Scan"
+                    }
+                  }
+                }
+              }
             }
-          }
+          },
+          "controlAggregation": "midColumnPages",
+          "contextPattern": "/ZQMM_C_Audit_Header({key})"
         }
       }
     },
@@ -157,9 +189,18 @@
         "sap.ui.controllerExtensions": {
           "sap.fe.templates.ListReport.ListReportController": {
             "controllerName": "gc.agr.aafc.mm.eqauditmng.ext.controller.AuditHeaderListExt"
+          },
+          "sap.fe.templates.ObjectPage.ObjectPageController": {
+            "controllerName": "gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt"
           }
         }
       }
+    },
+    "rootView": {
+      "viewName": "sap.fe.templates.RootContainer.view.Fcl",
+      "type": "XML",
+      "async": true,
+      "id": "appRootView"
     }
   },
   "sap.fiori": {
