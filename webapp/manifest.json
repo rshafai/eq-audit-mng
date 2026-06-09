@@ -1,5 +1,5 @@
 {
-  "_version": "1.60.0",
+  "_version": "1.6.0",
   "sap.app": {
     "id": "gc.agr.aafc.mm.eqauditmng",
     "type": "application",
