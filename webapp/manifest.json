@@ -159,14 +159,18 @@
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "editableHeaderContent": false,
-              "contextPath": "/ZQMM_C_Audit_Header",
+              "entitySet": "ZQMM_C_Audit_Header",
               "controlConfiguration": {
-                "_Items/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": {
-                    "type": "ResponsiveTable"
-                  },
+                "_AuditItems/@com.sap.vocabularies.UI.v1.LineItem": {
                   "actions": {
+                    "ApproveItem": {
+                      "id": "ApproveItem",
+                      "requiresSelection": true,
+                      "text": "Approve Items",
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onManualEditSpecsPress",
+                      "visible": true,
+                      "enabled": true
+                    },
                     "BarcodeScan": {
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onBarcodeScan",
                       "visible": true,

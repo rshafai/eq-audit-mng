@@ -1,0 +1,40 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:f="sap.ui.layout.form">
+    <Dialog id="editSpecsDialog" title="Edit Equipment Specifications" type="Message">
+        <content>
+            <f:SimpleForm id="idFormEditSpecs" editable="true" layout="ResponsiveGridLayout">
+                <f:content>
+                    <Label id="idLblMfgNam" text="Manufacturer Name" />
+                    <Input id="inputManufacturerName" placeholder="Enter Manufacturer Name..."
+                        value="{
+                            path: 'editModel>/AssetManufacturerName',
+                            type: 'sap.ui.model.odata.type.String',
+                            constraints: { maxLength: 18 }
+                        }"  />
+
+                    <!-- <Label id="idLblSerial" text="Serial Number" />
+                    <Input id="inputSerialNumber" value="{/ManufacturerSerialNumber}" placeholder="Enter Serial Number..."/>
+
+                    <Label id="idLblModel" text="Model Number" />
+                    <Input id="inputModelNumber" value="{/EquipmentManufacturerPrtNmbr}" placeholder="Enter Model Number..."/> -->
+
+                    <Label id="idLblCountry" text="Manufacturer Country" />
+                    <Input id="inputManufCountry" placeholder="Enter Country Key (e.g. DE, US)..." 
+                        value="{
+                            path: 'editModel>/ManufacturerCountry',
+                            type: 'sap.ui.model.odata.type.String',
+                            constraints: { maxLength: 3 }
+                        }" />
+                </f:content>
+            </f:SimpleForm> 
+        </content>
+        <beginButton>
+            <Button id="idSubmitChanges" text="Submit Changes" type="Emphasized" press=".onSubmitSpecs" />
+        </beginButton>
+        <endButton>
+            <Button id="idCancel" text="Cancel" press=".onCancelSpecs" />
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

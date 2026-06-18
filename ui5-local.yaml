@@ -32,8 +32,9 @@ server:
         ignoreCertErrors: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
         backend:
           - path: /sap
-            url: https://tmqpas01.agr.gc.ca:44333
+            url: https://tmqpas01.agr.gc.ca:44333/
             client: '100'
+            authenticationType: basic
     - name: sap-fe-mockserver
       beforeMiddleware: csp
       configuration:
@@ -43,4 +44,5 @@ server:
             metadataPath: ./webapp/localService/mainService/metadata.xml
             mockdataPath: ./webapp/localService/mainService/data
             generateMockData: true
+            resolveExternalServiceReferences: true
         annotations: []

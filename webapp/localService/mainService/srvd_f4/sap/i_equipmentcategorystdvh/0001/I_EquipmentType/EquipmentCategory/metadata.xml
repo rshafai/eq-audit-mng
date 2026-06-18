@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_COMMUNICATION',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.Communication.v1" Alias="Communication"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_PERSONALDATA',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.PersonalData.v1" Alias="PersonalData"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_ANALYTICS',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.Analytics.v1" Alias="Analytics"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_COMMON',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="SAP__common"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_MEASURES',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="Org.OData.Measures.V1" Alias="SAP__measures"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_CORE',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="Org.OData.Core.V1" Alias="SAP__core"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_CAPABILITIES',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="Org.OData.Capabilities.V1" Alias="SAP__capabilities"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_AGGREGATION',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="SAP__aggregation"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_VALIDATION',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="Org.OData.Validation.V1" Alias="SAP__validation"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_CODELIST',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.CodeList.v1" Alias="SAP__CodeList"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_UI',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="SAP__UI"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_HTML5',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.HTML5.v1" Alias="SAP__HTML5"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_PDF',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.PDF.v1" Alias="SAP__PDF"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_SESSION',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.Session.v1" Alias="SAP__session"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_HIERARCHY',Version='0001',SAP__Origin='LOCAL')/$value">
+        <edmx:Include Namespace="com.sap.vocabularies.Hierarchy.v1" Alias="SAP__hierarchy"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="../../../../srvd/sap/zqmm_ui_audit_header/0001/$metadata">
+        <edmx:Include Namespace="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001" Alias="SAP__ParentService"/>
+    </edmx:Reference>
+    <edmx:DataServices>
+        <Schema Namespace="com.sap.gateway.srvd_f4.i_equipmentcategorystdvh.v0001" Alias="SAP__self">
+            <Annotation Term="SAP__core.SchemaVersion" String="1.0.0"/>
+            <EntityType Name="I_EquipmentCategoryStdVHType">
+                <Key>
+                    <PropertyRef Name="EquipmentCategory"/>
+                </Key>
+                <Property Name="EquipmentCategory" Type="Edm.String" Nullable="false" MaxLength="1"/>
+                <Property Name="EquipmentCategory_Text" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="EquipmentCategoryStatusProfile" Type="Edm.String" Nullable="false" MaxLength="8"/>
+                <Property Name="EquipmentCategoryViewProfile" Type="Edm.String" Nullable="false" MaxLength="8"/>
+                <Property Name="EquipCatHasLinearAttributes" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipmentCategoryOID" Type="Edm.String" Nullable="false" MaxLength="128"/>
+                <Property Name="IsUtilitiesData" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="NumberRangeForIntIDAssignment" Type="Edm.String" Nullable="false" MaxLength="2"/>
+                <Property Name="NumberRangeForExtIDAssignment" Type="Edm.String" Nullable="false" MaxLength="2"/>
+                <Property Name="TechObjInspectionLevelCode" Type="Edm.String" Nullable="false" MaxLength="1"/>
+                <Property Name="TechObjInspectionLevelCode_Text" Type="Edm.String" Nullable="false" MaxLength="60"/>
+                <Property Name="EquipmentCategoryReferenceType" Type="Edm.String" Nullable="false" MaxLength="1"/>
+            </EntityType>
+            <EntityContainer Name="Container">
+                <EntitySet Name="I_EquipmentCategoryStdVH" EntityType="com.sap.gateway.srvd_f4.i_equipmentcategorystdvh.v0001.I_EquipmentCategoryStdVHType"/>
+            </EntityContainer>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/EquipmentCategory">
+                <Annotation Term="SAP__common.Text" Path="EquipmentCategory_Text"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Equipment category"/>
+                <Annotation Term="SAP__common.Heading" String="C"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/EquipmentCategory_Text">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Equipment CatDesc."/>
+                <Annotation Term="SAP__common.Heading" String="Equipment category description"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment category description"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/EquipmentCategoryStatusProfile">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Status Profile"/>
+                <Annotation Term="SAP__common.Heading" String="StatProf"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/EquipmentCategoryViewProfile">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="View profile"/>
+                <Annotation Term="SAP__common.Heading" String="Profl."/>
+                <Annotation Term="SAP__common.QuickInfo" String="View profile for tab index Customizing"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/NumberRangeForIntIDAssignment">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="No. Range Int. Asst"/>
+                <Annotation Term="SAP__common.Heading" String="IntNR"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Number Range of Internal Number Assignment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/NumberRangeForExtIDAssignment">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="No. Range Ext. Asst"/>
+                <Annotation Term="SAP__common.Heading" String="ExtNR"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Number Range of External Number Assignment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/TechObjInspectionLevelCode">
+                <Annotation Term="SAP__common.Text" Path="TechObjInspectionLevelCode_Text"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Inspection Level"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Level at Which the Object is Represented"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/TechObjInspectionLevelCode_Text">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Short Description"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Short Text for Fixed Values"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/EquipmentCategoryReferenceType">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="EquipRefCateg."/>
+                <Annotation Term="SAP__common.Heading" String="R"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment reference category"/>
+            </Annotations>
+            <Annotations Target="SAP__ParentService.I_EquipmentType/EquipmentCategory">
+                <Annotation Term="SAP__common.ValueListMapping">
+                    <Record>
+                        <PropertyValue Property="Label" String="Equipment Category"/>
+                        <PropertyValue Property="CollectionPath" String="I_EquipmentCategoryStdVH"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="SAP__common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="EquipmentCategory"/>
+                                    <PropertyValue Property="ValueListProperty" String="EquipmentCategory"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="EquipmentCategory_Text"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="EquipmentCategoryStatusProfile"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="EquipmentCategoryViewProfile"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="EquipCatHasLinearAttributes"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="EquipmentCategoryOID"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="IsUtilitiesData"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="NumberRangeForIntIDAssignment"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="NumberRangeForExtIDAssignment"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="TechObjInspectionLevelCode"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="TechObjInspectionLevelCode_Text"/>
+                                </Record>
+                                <Record Type="SAP__common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="EquipmentCategoryReferenceType"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType">
+                <Annotation Term="SAP__common.Label" String="Equipment Category"/>
+            </Annotations>
+            <Annotations Target="SAP__self.Container/I_EquipmentCategoryStdVH">
+                <Annotation Term="SAP__capabilities.SearchRestrictions">
+                    <Record>
+                        <PropertyValue Property="Searchable" Bool="true"/>
+                        <PropertyValue Property="UnsupportedExpressions" EnumMember="SAP__capabilities.SearchExpressions/AND SAP__capabilities.SearchExpressions/OR SAP__capabilities.SearchExpressions/NOT SAP__capabilities.SearchExpressions/group SAP__capabilities.SearchExpressions/phrase"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="Insertable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.DeleteRestrictions">
+                    <Record>
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.UpdateRestrictions">
+                    <Record>
+                        <PropertyValue Property="Updatable" Bool="false"/>
+                        <PropertyValue Property="QueryOptions">
+                            <Record>
+                                <PropertyValue Property="SelectSupported" Bool="true"/>
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__core.OptimisticConcurrency">
+                    <Collection/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.Container">
+                <Annotation Term="SAP__aggregation.ApplySupported">
+                    <Record>
+                        <PropertyValue Property="Transformations">
+                            <Collection>
+                                <String>aggregate</String>
+                                <String>groupby</String>
+                                <String>filter</String>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="Rollup" EnumMember="SAP__aggregation.RollupType/None"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__common.ApplyMultiUnitBehaviorForSortingAndFiltering" Bool="true"/>
+                <Annotation Term="SAP__capabilities.FilterFunctions">
+                    <Collection>
+                        <String>eq</String>
+                        <String>ne</String>
+                        <String>gt</String>
+                        <String>ge</String>
+                        <String>lt</String>
+                        <String>le</String>
+                        <String>and</String>
+                        <String>or</String>
+                        <String>contains</String>
+                        <String>startswith</String>
+                        <String>endswith</String>
+                        <String>any</String>
+                        <String>all</String>
+                    </Collection>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.SupportedFormats">
+                    <Collection>
+                        <String>application/json</String>
+                        <String>application/pdf</String>
+                    </Collection>
+                </Annotation>
+                <Annotation Term="SAP__PDF.Features">
+                    <Record>
+                        <PropertyValue Property="DocumentDescriptionReference" String="../../../../default/iwbep/common/0001/$metadata"/>
+                        <PropertyValue Property="DocumentDescriptionCollection" String="MyDocumentDescriptions"/>
+                        <PropertyValue Property="ArchiveFormat" Bool="true"/>
+                        <PropertyValue Property="Border" Bool="true"/>
+                        <PropertyValue Property="CoverPage" Bool="true"/>
+                        <PropertyValue Property="FitToPage" Bool="true"/>
+                        <PropertyValue Property="FontName" Bool="true"/>
+                        <PropertyValue Property="FontSize" Bool="true"/>
+                        <PropertyValue Property="Margin" Bool="true"/>
+                        <PropertyValue Property="Padding" Bool="true"/>
+                        <PropertyValue Property="Signature" Bool="true"/>
+                        <PropertyValue Property="HeaderFooter" Bool="true"/>
+                        <PropertyValue Property="ResultSizeDefault" Int="100"/>
+                        <PropertyValue Property="ResultSizeMaximum" Int="5000"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.KeyAsSegmentSupported"/>
+                <Annotation Term="SAP__capabilities.AsynchronousRequestsSupported"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/EquipCatHasLinearAttributes">
+                <Annotation Term="SAP__common.Label" String="Linear Asset"/>
+                <Annotation Term="SAP__common.Heading" String="Linear"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Indicator: Object Belongs to Linear Asset Management"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/EquipmentCategoryOID">
+                <Annotation Term="SAP__common.Label" String="Equi Cat Obj Inst ID"/>
+                <Annotation Term="SAP__common.Heading" String="Equipment Category Obj Instance ID"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Object Instance ID of Equipment Category"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_EquipmentCategoryStdVHType/IsUtilitiesData">
+                <Annotation Term="SAP__common.Label" String="IS-U"/>
+                <Annotation Term="SAP__common.Heading" String="ISU"/>
+                <Annotation Term="SAP__common.QuickInfo" String="IS-U data"/>
+            </Annotations>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>
