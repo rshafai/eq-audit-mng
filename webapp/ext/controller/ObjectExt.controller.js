@@ -18,38 +18,311 @@ sap.ui.define([
              * @memberOf gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt
              */
             onInit: function () {
-                // you can access the Fiori elements extensionAPI via this.base.getExtensionAPI
-                //var oModel = this.base.getExtensionAPI().getModel();
+            }
 
-                // Initialize or clear the local edit model
-                var oView = this.getView();
-                var oJSONModel = new JSONModel({
-                    MaintenancePlant : "",
-                    AssetLocation : "",
-                    AssetRoom : "",
-                    FunctionalLocation : "",
-                    CostCenter : "",
-                    AssetManufacturerName : "",
-                    ManufacturerCountry : "",
-                    ManufacturerPartTypeName : "",
-                    ManufacturerSerialNumber : "",
-                    AcquisitionDate : "",
-                    AcquisitionValue : "",
-                    Currency : ""
-                    });
-                oView.setModel(oJSONModel, "editModel");
-            },
-
+//             editFlow: {
+//                 onAfterBinding: function (oBindingContext) {
+//                     // This callback function is automatically executed by Fiori Elements
+//                     // the exact millisecond any automatic ba
+// debugger
+//                 },
+//             }
         }, // override
 
         
+        //onManualEditSpecsPress: function (oEvent) {
+        showEditPopup: function(oItemContext) {
+debugger;
+            this._oCurrentItemContext = oItemContext;
+            var oView = this.getView();
+            var oAuditItem = oItemContext.getObject();
+            var sEquipmentId = oAuditItem.Equipment;
 
+            // Pad the Equipment ID with 0s
+            var sInternalEquipmentId = sEquipmentId;
+            if (/^\d+$/.test(sEquipmentId)) {
+                sInternalEquipmentId = sEquipmentId.padStart(18, '0');
+            }
+            
+            // Save these variables globally/locally on the controller for your later SAVE payload
+            this._sCurrentAuditDocId = oAuditItem.AuditDocId;
+            this._sCurrentItemNumber = oAuditItem.ItemNumber;
+        
+            if (!this._oDialog) {
+                this._oDialog = this.base.getExtensionAPI().loadFragment({
+                    id: oView.getId(),
+                    name: "gc.agr.aafc.mm.eqauditmng.ext.fragment.EditSpecsPopup",
+                    controller: this,
+                    initialBindingContext: oItemContext
+                }).then(function (oDialog) { 
+                    this._oDialog = oDialog;
+                    oView.addDependent(oDialog);
+                    return oDialog;
+                }.bind(this));
+                this._oDialog.then(function (oDialog) {
+                    oDialog.setBindingContext(oItemContext);  //bindContext("/AuditHeader/_AuditItems(...)")
+                    this._getMasterData(oDialog);
+                    oDialog.attachModelContextChange(function(oMasterData) {
+                        debugger;
+                    }.bind(this))
+                }.bind(this));
+            } else {
+                this._getMasterData(this._oDialog);
+            }
+
+            
+        },
+        _getMasterData: function(oDialog){
+            var aContent = oDialog.getContent ? oDialog.getContent() : [];
+            var oModel = this.getView().getModel(); 
+            var oForm = aContent.find(function(oControl) {
+                return oControl.getMetadata().getName().includes("Form") || oControl.getId().includes("idFormChange");
+            });
+
+            if (!oModel || !oForm) {return;}
+
+            if (!this._fnDataReceivedCallback) {
+                this._fnDataReceivedCallback = function(oEvent) {
+                    var oParameters = oEvent.getParameters();
+                    
+                    // Guard check: Exit if the $batch failed on the backend
+                    if (oParameters && oParameters.error) { 
+                        console.error("Backend request failed: ", oParameters.error);
+                        return; 
+                    }
+        
+                    // Read the context directly from the Form control now that the batch returned
+                    if (oForm) {
+                        var oFormContext = oForm.getBindingContext();
+                        if (oFormContext) {
+                            var oServerResponseData = oFormContext.getObject();
+                            if (oServerResponseData && oServerResponseData.MaintenancePlant !== undefined) {
+                                debugger; // 🎯 TRAPPED! Hits every single time the fresh batch response arrives.
+                                console.log("Extracted OData V4 Response Data:", oServerResponseData);
+        
+                                // Deep copy the server fields into your secondary local JSON model
+                                var oLocalCopy = JSON.parse(JSON.stringify(oServerResponseData));
+                                var oJsonModel = new sap.ui.model.json.JSONModel(oLocalCopy);
+                                oDialog.setModel(oJsonModel, "localBufferModel");
+                                
+                                // Clean up: Detach this precise listener immediately
+                                oModel.detachDataReceived(this._fnDataReceivedCallback);
+                            }
+                        }
+                    }
+                }.bind(this); // Ensure 'this' points to your controller instance inside the callback
+            }
+
+            if (oModel) {
+                oModel.attachDataReceived(this._fnDataReceivedCallback); 
+            }
+            if (oForm) {
+                var oBindingContext = oForm.getBindingContext();
+                if (oBindingContext) {
+                    var oBinding = oBindingContext.getBinding();
+                    
+                    if (oBinding && oBinding.changeParameters) {
+                        oBinding.changeParameters({
+                            "cacheBuster": "ts_" + Date.now() 
+                        });
+                    }
+                }
+            }
+            oDialog.open();
+        
+
+            //     this._fnDataReceivedCallback = function (oEvent) {
+            //         var oParameters = oEvent.getParameters();
+                    
+            //         // Guard check: Exit if the $batch actually failed on the backend
+            //         if (oParameters && oParameters.error) { 
+            //             console.error("Backend request failed: ", oParameters.error);
+            //             return; 
+            //         }
+            //         // Because the batch has returned, the form's binding context is now fully hydrated.
+            //         var oFormContext = oForm.getBindingContext();
+                    
+            //         if (oFormContext) {
+            //             var oServerResponseData = oFormContext.getObject();
+            //             if (oServerResponseData && oServerResponseData.MaintenancePlant !== undefined) {
+            //                 console.log("Extracted OData V4 Response Data:", oServerResponseData);
+
+            //                 // 7. Deep copy the server fields into your secondary local JSON model
+            //                 let oLocalCopy = JSON.parse(JSON.stringify(oServerResponseData));
+            //                 let oJsonModel = new sap.ui.model.json.JSONModel(oLocalCopy);
+            //                 oDialog.setModel(oJsonModel, "localBufferModel");
+                            
+            //                 // 9. Clean up: Detach the listener immediately so it doesn't execute during other actions
+            //                 oModel.detachDataReceived(this._fnDataReceivedCallback);
+            //             }
+            //         }
+            //     };
+            //     oModel.attachDataReceived(this._fnDataReceivedCallback);
+            //     oDialog.open();                
+            // }
+
+        },
+        onValueHelp: function(oEvent){
+            debugger;
+        },
+        
+        _bindAndOpenDialog: function(sEquipmentId) {
+            //NOT USED ----
+            var oView = this.getView();
+            
+            // 1. Manually construct the OData V4 entity path
+            // For single-key string parameters, wrap the ID in single quotes
+            var sPath = "/ZQMM_R_Equip_BarcodeTR('" + sEquipmentId + "')";
+            //-- Relative paths generate errors in XML binding - it always binds to header
+            //-- var sPath = this._oCurrentItemContext.getPath(); // + "/_Equipment"; 
+
+            // this._oDialog.unbindElement();
+            // this._oDialog.setBindingContext(null);
+
+            // 2. Bind the Dialog directly using OData V4 parameters
+            this._oDialog.bindElement({
+                path: sPath,
+                parameters: {
+                    // Optional: specify group ID to prevent auto-submitting layout updates to the backend
+                    $$updateGroupId: 'equipmentUpdateGroup' 
+                },
+                events: {
+                    dataReceived: function(oEvent) {
+                        var oHandler = oEvent.getParameter("error");
+                        if (oHandler) {
+                            sap.m.MessageBox.error("Could not load equipment master data.");
+                            return;
+                        }
+                        
+                        // Fetch data from the newly bound context to populate your custom status header
+                        var oBindingContext = this._oDialog.getBindingContext();
+                        if (oBindingContext) {
+                            // var sStatus = oBindingContext.getProperty("EquipmentStatusText"); // Adjust property name if different in R_EquipmentTR
+                            // this.byId("txtStatus").setText(sStatus || "ACTIVE");
+                        }
+                    }.bind(this)
+                }
+            });
+        
+            this._oDialog.open();
+        },
+
+        onSaveEquipmentChanges: function () {
+            var oDataModel = this.getView().getModel();
+            var oBindingContext = this._oDialog.getBindingContext();
+            
+            if (!oBindingContext) {
+                return;
+            }
+        
+            // 1. Set the dialog to busy to prevent multiple clicks
+            this._oDialog.setBusy(true);
+        
+            // 2. Extract the live values from the OData V4 context binding
+            var oPayload = {
+                AuditDocId: this._sCurrentAuditDocId, // Captured when opening the dialog
+                ItemNumber: this._sCurrentItemNumber, // Captured when opening the dialog
+                MaintenancePlant: oBindingContext.getProperty("MaintenancePlant") || "",
+                ManufacturerName: oBindingContext.getProperty("AssetManufacturerName") || "",
+                ManufacturerSerialNumber: oBindingContext.getProperty("ManufacturerSerialNumber") || ""
+            };
+        
+            // 3. Bind the execution context to your RAP Bound/Unbound Action 
+            // Adjust the path to match your exact action registration name
+            var sNamespacePath  = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.logEquipmentChanges";
+            var sActionPath = "/ZQMM_C_Audit_Header('" + this._sCurrentAuditDocId + "')/" + sNamespacePath;
+            var oExtensionAPI = this.base.getExtensionAPI(); 
+
+            var oActionParameters = [
+                { name: 'MaintenancePlant', value: oBindingContext.getProperty("MaintenancePlant") },
+                { name: 'AssetManufacturerName', value: oBindingContext.getProperty("AssetManufacturerName") },
+                { name: 'ManufacturerSerialNumber', value: oBindingContext.getProperty("ManufacturerSerialNumber") }
+            ];
+    oExtensionAPI.editFlow.invokeAction(sNamespacePath, {
+        contexts: [this._oCurrentItemContext], // Passes your active row context array cleanly
+        parameterValues: oActionParameters,
+        skipParameterDialog: true
+    }).then(function (aResult) {
+                this._oDialog.setBusy(false);
+                this._oDialog.close();
+                let oResult = aResult[0];
+                if (oResult.status === "rejected"){
+                    console.log("Error returned from backend: " + oResult.reason);
+                } else{
+                    MessageToast.show("Equipment changes logged successfully.");
+                    oDataModel.resetChanges('equipmentUpdateGroup'); 
+                    oDataModel.refresh(); 
+                }
+            }.bind(this)).catch(function (oError) {
+                this._oDialog.setBusy(false);
+                MessageBox.error("Save failed: " + oError.getMessage());
+            }.bind(this));
+        },
+        
+        onCloseEquipmentDialog: function () {
+            if (this._oDialog) {
+                this._oDialog.close();
+            }
+        },
+        
+        onAfterClose: function(oEvent){
+            if (this._oDialog) {
+                //this._oDialog.close();
+                this.getView().getModel().resetChanges('equipmentUpdateGroup');
+
+                var oLocalModel = this._oDialog.getModel("localBufferModel");
+                if (oLocalModel) {
+                    oLocalModel.setData({}); 
+                }
+
+                var aContent = this._oDialog.getContent ? this._oDialog.getContent() : [];
+                var oForm = aContent.find(function(oControl) {
+                    return oControl.getMetadata().getName().includes("Form") || oControl.getId().includes("idFormChange");
+                });
+
+                // 4. THE FIX: Forcefully unbind the OData V4 contexts so the engine treats it as brand new next time
+                if (oForm) {
+                    oForm.setBindingContext(null); // Strips the current row instance pointers
+                }
+                this._oDialog.setBindingContext(null);
+
+                // 5. Alternative/Fail-safe: If your Fiori elements layout binds via a dedicated path, 
+                // unbind the element explicitly to destroy the runtime binding tree.
+                // if (oForm && oForm.unbindElement) {
+                //      oForm.unbindElement(); 
+                // }
+            }
+        },
+        onDialogAfterOpen: function() {
+        },
+        onDialogBeforeOpen: function(oEvent){
+debugger;
+var aContent = this._oDialog.getContent ? this._oDialog.getContent() : [];
+            var oModel = this.getView().getModel(); 
+            var oForm = aContent.find(function(oControl) {
+                return oControl.getMetadata().getName().includes("Form") || oControl.getId().includes("idFormChange");
+            });
+//oForm.getBindingContext().refresh();
+var oModel = this.getView().getModel();
+            if (oModel) {
+                // Use the exact tracking callback function we built in the previous step
+                oModel.attachDataReceived(this._fnDataReceivedCallback); 
+            }
+
+        },
+
+
+
+//----------------------------------------------------------------------
+// Using json model - NOT USED
+//----------------------------------------------------------------------
         onManualEditSpecsPress: function (oEvent, aContexts) {
             // Fiori Elements automatically passes the selected row context(s)
             if (!aContexts || aContexts.length === 0) {
                 return;
             }
-            this.openEditSpecsDialog(aContexts[0]);
+            //this.openEditSpecsDialog(aContexts[0]);
+            this.showEditPopup(aContexts[0]);
         },
 
         openEditSpecsDialog: function (oItemContext) {

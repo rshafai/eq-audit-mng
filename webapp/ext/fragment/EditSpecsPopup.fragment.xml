@@ -1,40 +1,68 @@
 <core:FragmentDefinition
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
-    xmlns:f="sap.ui.layout.form">
-    <Dialog id="editSpecsDialog" title="Edit Equipment Specifications" type="Message">
+    xmlns:f="sap.ui.layout.form"
+    xmlns:macros="sap.fe.macros">
+
+
+<Dialog id="changeEquiDialog" 
+    title="Edit Equipment Properties" 
+    contentWidth="650px"
+    beforeOpen="onDialogBeforeOpen"
+    afterOpen="onDialogAfterOpen"
+    afterClose="onAfterClose"
+    >
+        <customHeader>
+            <Bar id="idBar">
+                <contentLeft>
+                    <Title id="idTitle" text="Edit Equipment {Equipment}"/>
+                </contentLeft>
+                
+                <contentRight>
+                    <ObjectStatus id="txtStatus" text="Active Status" state="Information" />
+                </contentRight>
+            </Bar>
+        </customHeader>
         <content>
-            <f:SimpleForm id="idFormEditSpecs" editable="true" layout="ResponsiveGridLayout">
-                <f:content>
-                    <Label id="idLblMfgNam" text="Manufacturer Name" />
-                    <Input id="inputManufacturerName" placeholder="Enter Manufacturer Name..."
-                        value="{
-                            path: 'editModel>/AssetManufacturerName',
-                            type: 'sap.ui.model.odata.type.String',
-                            constraints: { maxLength: 18 }
-                        }"  />
 
-                    <!-- <Label id="idLblSerial" text="Serial Number" />
-                    <Input id="inputSerialNumber" value="{/ManufacturerSerialNumber}" placeholder="Enter Serial Number..."/>
+        <f:SimpleForm id="idFormChange" editable="true" layout="ResponsiveGridLayout">
+        <f:content>
+            <Label id="idLblMaintPlant" text="Maintenance Plant" required="false" />
+            <HBox alignItems="Center" displayInline="true">
+                <Input id="idMaintPlant" value="{MaintenancePlant}" showValueHelp="true" valueHelpRequest="onValueHelp" class="sapUiTinyMarginEnd"/>
+                <Label text=" "  class="sapUiTinyMarginEnd" />
+                <Text text="{path: 'localBufferModel>/MaintenancePlant', mode: 'OneWay'}" class="sapUiMediumMarginEnd" style="Bold" />
+            </HBox>
+            <!-- <Label id="idLblLocation" text="Location" />
+            <Input id="idLocation" value="{AssetLocation}" showValueHelp="true" valueHelpRequest="onValueHelp"></Input> -->
 
-                    <Label id="idLblModel" text="Model Number" />
-                    <Input id="inputModelNumber" value="{/EquipmentManufacturerPrtNmbr}" placeholder="Enter Model Number..."/> -->
+            <Label id="idlblSerial" text="Serial Number" />
+            <HBox alignItems="Center" displayInline="true">
+                <Input id="idSerial" value="{ManufacturerSerialNumber}" showValueHelp="true" valueHelpRequest="onValueHelp" class="sapUiTinyMarginEnd"/>
+                <Label text="   " class="sapUiTinyMarginEnd" />
+                <Text text="{path: 'ManufacturerSerialNumber', mode: 'OneWay'}" class="sapUiMediumMarginEnd" style="Bold" />
+            </HBox>
 
-                    <Label id="idLblCountry" text="Manufacturer Country" />
-                    <Input id="inputManufCountry" placeholder="Enter Country Key (e.g. DE, US)..." 
-                        value="{
-                            path: 'editModel>/ManufacturerCountry',
-                            type: 'sap.ui.model.odata.type.String',
-                            constraints: { maxLength: 3 }
-                        }" />
-                </f:content>
-            </f:SimpleForm> 
+
+            <Label id="idlblMfgName" text="Manufacturer" />
+            <HBox alignItems="Center" displayInline="true">
+                <Input id="idMfgName" value="{AssetManufacturerName}" showValueHelp="true" valueHelpRequest="onValueHelp" class="sapUiTinyMarginEnd"/>
+                <Label text="   " class="sapUiTinyMarginEnd" />
+                <Text text="{path: 'AssetManufacturerName', mode: 'OneWay'}" class="sapUiMediumMarginEnd" style="Bold" />
+            </HBox>
+
+            <!-- <macros:Field id="fldPlant" 
+                            metaPath="EquipmentName" 
+                            readOnly="true" />     -->
+                            
+        </f:content>
+        </f:SimpleForm>
+
         </content>
-        <beginButton>
-            <Button id="idSubmitChanges" text="Submit Changes" type="Emphasized" press=".onSubmitSpecs" />
-        </beginButton>
-        <endButton>
-            <Button id="idCancel" text="Cancel" press=".onCancelSpecs" />
-        </endButton>
+        <buttons>
+            <Button text="Save" type="Emphasized" id="btnSave" press=".onSaveEquipmentChanges" />
+            <Button text="Cancel" id="btnCancel" press=".onCloseEquipmentDialog" />
+        </buttons>
     </Dialog>
+    
 </core:FragmentDefinition>

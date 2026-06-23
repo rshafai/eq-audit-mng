@@ -163,6 +163,14 @@
               "controlConfiguration": {
                 "_AuditItems/@com.sap.vocabularies.UI.v1.LineItem": {
                   "actions": {
+                    "EditItem": {
+                      "id": "EditItem",
+                      "requiresSelection": true,
+                      "text": "Edit Item",
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onManualEditSpecsPress",
+                      "visible": true,
+                      "enabled": true
+                    },
                     "ApproveItem": {
                       "id": "ApproveItem",
                       "requiresSelection": true,
