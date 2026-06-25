@@ -48,6 +48,13 @@
     <edmx:DataServices>
         <Schema Namespace="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001" Alias="SAP__self">
             <Annotation Term="SAP__core.SchemaVersion" String="1.0.0"/>
+            <EntityType Name="I_PlantStdVHType">
+                <Key>
+                    <PropertyRef Name="Plant"/>
+                </Key>
+                <Property Name="Plant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="PlantName" Type="Edm.String" Nullable="false" MaxLength="30"/>
+            </EntityType>
             <EntityType Name="I_EquipmentType">
                 <Key>
                     <PropertyRef Name="Equipment"/>
@@ -113,6 +120,7 @@
                 <Property Name="ValueNew" Type="Edm.String" Nullable="false" MaxLength="254"/>
                 <Property Name="ValueOld" Type="Edm.String" Nullable="false" MaxLength="254"/>
                 <Property Name="Equipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Property Name="ChangeId" Type="Edm.Guid"/>
                 <Property Name="CreatedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
                 <Property Name="CreatedAt" Type="Edm.DateTimeOffset"/>
                 <Property Name="LastChangedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
@@ -127,6 +135,19 @@
                     <ReferentialConstraint Property="AuditDocId" ReferencedProperty="AuditDocId"/>
                     <ReferentialConstraint Property="ItemNumber" ReferencedProperty="ItemNumber"/>
                 </NavigationProperty>
+            </EntityType>
+            <EntityType Name="AuditFieldConfigType">
+                <Key>
+                    <PropertyRef Name="FieldName"/>
+                </Key>
+                <Property Name="FieldName" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="LabelEn" Type="Edm.String" Nullable="false" MaxLength="100"/>
+                <Property Name="LabelFr" Type="Edm.String" Nullable="false" MaxLength="100"/>
+                <Property Name="EquipField" Type="Edm.String" Nullable="false" MaxLength="100"/>
+                <Property Name="VhEntity" Type="Edm.String" Nullable="false" MaxLength="100"/>
+                <Property Name="VhKeyField" Type="Edm.String" Nullable="false" MaxLength="100"/>
+                <Property Name="VhDescField" Type="Edm.String" Nullable="false" MaxLength="100"/>
+                <Property Name="Sequence" Type="Edm.Byte" Nullable="false"/>
             </EntityType>
             <EntityType Name="ZQMM_C_Audit_ItemsType">
                 <Key>
@@ -156,19 +177,15 @@
                 <Property Name="LastChangedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
                 <Property Name="LastChangedAt" Type="Edm.DateTimeOffset"/>
                 <Property Name="LocalLastChangedAt" Type="Edm.DateTimeOffset"/>
-                <Property Name="AcquisitionValue" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="variable"/>
-                <Property Name="AcquisitionDate" Type="Edm.Date"/>
-                <Property Name="MfgName" Type="Edm.String" Nullable="false" MaxLength="30"/>
-                <Property Name="MfgModelNumber" Type="Edm.String" Nullable="false" MaxLength="30"/>
-                <Property Name="MfgSerialNumber" Type="Edm.String" Nullable="false" MaxLength="30"/>
-                <Property Name="MfgCountry" Type="Edm.String" Nullable="false" MaxLength="3"/>
-                <Property Name="Currency" Type="Edm.String" Nullable="false" MaxLength="5"/>
-                <Property Name="LastChangedByUser" Type="Edm.String" Nullable="false" MaxLength="12"/>
-                <Property Name="LastChangeDateTime" Type="Edm.DateTimeOffset"/>
-                <Property Name="EquipmentIsMarkedForDeletion" Type="Edm.Boolean" Nullable="false"/>
-                <Property Name="EquipmentIsInstalled" Type="Edm.Boolean" Nullable="false"/>
-                <Property Name="EquipmentIsInactive" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="MaintenancePlant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="AssetLocation" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="AssetRoom" Type="Edm.String" Nullable="false" MaxLength="8"/>
+                <Property Name="CostCenter" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="FunctionalLocation" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="ManufacturerSerialNumber" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="AssetManufacturerName" Type="Edm.String" Nullable="false" MaxLength="30"/>
                 <Property Name="__EntityControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EntityControl"/>
+                <Property Name="__OperationControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsOperationControl"/>
                 <Property Name="SAP__Messages" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.SAP__Message)" Nullable="false"/>
                 <NavigationProperty Name="_AuditChanges" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ChangeType)" Partner="_AuditItems">
                     <OnDelete Action="Cascade"/>
@@ -176,6 +193,7 @@
                 <NavigationProperty Name="_AuditHeader" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_HeaderType" Nullable="false" Partner="_AuditItems">
                     <ReferentialConstraint Property="AuditDocId" ReferencedProperty="AuditDocId"/>
                 </NavigationProperty>
+                <NavigationProperty Name="_Equipment" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType"/>
             </EntityType>
             <EntityType Name="ZQMM_C_Audit_HeaderType">
                 <Key>
@@ -208,6 +226,13 @@
                     <OnDelete Action="Cascade"/>
                 </NavigationProperty>
             </EntityType>
+            <EntityType Name="ZQMM_I_FLoc_VHType">
+                <Key>
+                    <PropertyRef Name="FunctionalLocation"/>
+                </Key>
+                <Property Name="FunctionalLocation" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="FunctionalLocationName" Type="Edm.String" Nullable="false" MaxLength="40"/>
+            </EntityType>
             <EntityType Name="ZQMM_C_Audit_ChangeDocumentType">
                 <Key>
                     <PropertyRef Name="ChangeDocObject"/>
@@ -236,7 +261,20 @@
                 <Property Name="ChangeDocNewFieldValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
                 <Property Name="ChangeDocPreviousFieldValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
             </EntityType>
-            <EntityType Name="EquipBarcodeType">
+            <EntityType Name="ZQMM_I_CostCenter_VHType">
+                <Key>
+                    <PropertyRef Name="ControllingArea"/>
+                    <PropertyRef Name="CostCenter"/>
+                    <PropertyRef Name="ValidityEndDate"/>
+                </Key>
+                <Property Name="ControllingArea" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="CostCenter" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="ValidityEndDate" Type="Edm.Date" Nullable="false"/>
+                <Property Name="ValidityStartDate" Type="Edm.Date"/>
+                <Property Name="CostCenterName" Type="Edm.String" Nullable="false" MaxLength="20"/>
+                <Property Name="CostCenterDescription" Type="Edm.String" Nullable="false" MaxLength="40"/>
+            </EntityType>
+            <EntityType Name="ZQMM_R_Equip_BarcodeTRType">
                 <Key>
                     <PropertyRef Name="Equipment"/>
                 </Key>
@@ -298,19 +336,150 @@
                 <Property Name="EquipmentImageUrl" Type="Edm.String" Nullable="false" MaxLength="100"/>
                 <Property Name="NewAuditDocId" Type="Edm.String" Nullable="false" MaxLength="10"/>
                 <Property Name="__EntityControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EntityControl"/>
-                <Property Name="__OperationControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EquipBarcodeOperationControl"/>
+                <Property Name="__OperationControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_R_Equip_BarcodeTROperationControl"/>
                 <Property Name="SAP__Messages" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.SAP__Message)" Nullable="false"/>
+            </EntityType>
+            <EntityType Name="R_EquipmentTPType">
+                <Key>
+                    <PropertyRef Name="Equipment"/>
+                    <PropertyRef Name="ValidityEndDate"/>
+                </Key>
+                <Property Name="Equipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Property Name="ValidityEndDate" Type="Edm.Date" Nullable="false"/>
+                <Property Name="ValidityEndTime" Type="Edm.TimeOfDay" Nullable="false"/>
+                <Property Name="ValidityStartDate" Type="Edm.Date"/>
+                <Property Name="EquipmentOID" Type="Edm.String" Nullable="false" MaxLength="128"/>
+                <Property Name="EquipmentName" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Property Name="EquipmentCategory" Type="Edm.String" Nullable="false" MaxLength="1"/>
+                <Property Name="TechnicalObjectType" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="AuthorizationGroup" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="GrossWeight" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="3"/>
+                <Property Name="GrossWeightUnit" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="SizeOrDimensionText" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Property Name="InventoryNumber" Type="Edm.String" Nullable="false" MaxLength="25"/>
+                <Property Name="OperationStartDate" Type="Edm.Date"/>
+                <Property Name="AcquisitionValue" Type="Edm.Decimal" Nullable="false" Precision="13" Scale="variable"/>
+                <Property Name="Currency" Type="Edm.String" Nullable="false" MaxLength="5"/>
+                <Property Name="AcquisitionDate" Type="Edm.Date"/>
+                <Property Name="AssetManufacturerName" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="ManufacturerPartTypeName" Type="Edm.String" Nullable="false" MaxLength="20"/>
+                <Property Name="ManufacturerCountry" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="ConstructionYear" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="ConstructionMonth" Type="Edm.String" Nullable="false" MaxLength="2"/>
+                <Property Name="EquipmentManufacturerPrtNmbr" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="ManufacturerSerialNumber" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="EquipmentEndOfUseDate" Type="Edm.Date"/>
+                <Property Name="MaintenancePlant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="AssetLocation" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="AssetRoom" Type="Edm.String" Nullable="false" MaxLength="8"/>
+                <Property Name="PlantSection" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="WorkCenter" Type="Edm.String" Nullable="false" MaxLength="8"/>
+                <Property Name="WorkCenterInternalID" Type="Edm.String" Nullable="false" MaxLength="8"/>
+                <Property Name="WorkCenterPlant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="ABCIndicator" Type="Edm.String" Nullable="false" MaxLength="1"/>
+                <Property Name="MaintObjectFreeDefinedAttrib" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="FormOfAddress" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="BusinessPartnerName1" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Property Name="BusinessPartnerName2" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Property Name="CityName" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Property Name="HouseNumber" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="HouseNumberSupplementText" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="Building" Type="Edm.String" Nullable="false" MaxLength="20"/>
+                <Property Name="Floor" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="RoomNumber" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="PostalCode" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="StreetName" Type="Edm.String" Nullable="false" MaxLength="60"/>
+                <Property Name="Region" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="Country" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="PhoneNumber" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="AddressFaxNumber" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="CompanyCode" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="BusinessArea" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="MasterFixedAsset" Type="Edm.String" Nullable="false" MaxLength="12"/>
+                <Property Name="FixedAsset" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="CostCenter" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="ControllingArea" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="WBSElementExternalID" Type="Edm.String" Nullable="false" MaxLength="24"/>
+                <Property Name="SettlementOrder" Type="Edm.String" Nullable="false" MaxLength="12"/>
+                <Property Name="MaintenancePlanningPlant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="MaintenancePlannerGroup" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="MainWorkCenter" Type="Edm.String" Nullable="false" MaxLength="8"/>
+                <Property Name="MainWorkCenterInternalID" Type="Edm.String" Nullable="false" MaxLength="8"/>
+                <Property Name="MainWorkCenterPlant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="CatalogProfile" Type="Edm.String" Nullable="false" MaxLength="9"/>
+                <Property Name="FunctionalLocation" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="FunctionalLocationLabelName" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Property Name="FunctionalLocationName" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Property Name="EquipInstallationPositionNmbr" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="SuperordinateEquipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Property Name="TechnicalObjectSortCode" Type="Edm.String" Nullable="false" MaxLength="25"/>
+                <Property Name="ConstructionMaterial" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Property Name="Material" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Property Name="SerialNumber" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Property Name="UniqueItemIdentifier" Type="Edm.String" Nullable="false" MaxLength="72"/>
+                <Property Name="UniqueItemIdentifierStrucType" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="UniqueItemIdentifierRespPlant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="SalesOrganization" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="DistributionChannel" Type="Edm.String" Nullable="false" MaxLength="2"/>
+                <Property Name="OrganizationDivision" Type="Edm.String" Nullable="false" MaxLength="2"/>
+                <Property Name="SalesGroup" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="SalesOffice" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="CreationDate" Type="Edm.Date"/>
+                <Property Name="CreatedByUser" Type="Edm.String" Nullable="false" MaxLength="12"/>
+                <Property Name="LastChangedByUser" Type="Edm.String" Nullable="false" MaxLength="12"/>
+                <Property Name="LastChangeDateTime" Type="Edm.DateTimeOffset"/>
+                <Property Name="NextEquipUsagePeriodSqncNmbr" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="MaintObjectLocAcctAssgmtNmbr" Type="Edm.String" Nullable="false" MaxLength="12"/>
+                <Property Name="MaintObjectInternalID" Type="Edm.String" Nullable="false" MaxLength="22"/>
+                <Property Name="EquipUsagePeriodSequenceNumber" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="EquipmentIsAtCustomer" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipmentIsAvailable" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipmentIsInWarehouse" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipmentIsAssignedToDelivery" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipmentIsMarkedForDeletion" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipmentIsInstalled" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipIsAllocToSuperiorEquip" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipmentIsInactive" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="EquipHasSubOrdinateEquipment" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="__EntityControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EntityControl"/>
+                <Property Name="__OperationControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPOperationControl"/>
+                <Property Name="SAP__Messages" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.SAP__Message)" Nullable="false"/>
+            </EntityType>
+            <EntityType Name="ZQMM_I_LocationType">
+                <Key>
+                    <PropertyRef Name="Location"/>
+                    <PropertyRef Name="Plant"/>
+                </Key>
+                <Property Name="Location" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="Plant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="AddressID" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="LocationName" Type="Edm.String" Nullable="false" MaxLength="40"/>
             </EntityType>
             <ComplexType Name="ZQMM_C_Audit_HeaderCbAControl">
                 <Property Name="_AuditItems" Type="Edm.Boolean" Nullable="false"/>
             </ComplexType>
-            <ComplexType Name="EquipBarcodeOperationControl">
+            <ComplexType Name="ZQMM_C_Audit_ItemsOperationControl">
+                <Property Name="ApproveItem" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="logEquipmentChanges" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="saveEquipmentChanges" Type="Edm.Boolean" Nullable="false"/>
+            </ComplexType>
+            <ComplexType Name="ZQMM_R_Equip_BarcodeTROperationControl">
                 <Property Name="CreateAudit" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="ViewAudit" Type="Edm.Boolean" Nullable="false"/>
             </ComplexType>
+            <ComplexType Name="R_EquipmentTPOperationControl">
+                <Property Name="DismantleEquipment" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="DismantleEquipWithDataTransfer" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="InstallEquipment" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="InstallEquipWithDataTransfer" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="ResetEquipmentFromInactive" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="RsetEquipFromMarkedForDeletion" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="SetEquipmentToInactive" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="SetEquipToMarkedForDeletion" Type="Edm.Boolean" Nullable="false"/>
+            </ComplexType>
             <ComplexType Name="EntityControl">
-                <Property Name="Deletable" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="Updatable" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="Deletable" Type="Edm.Boolean" Nullable="false"/>
             </ComplexType>
             <ComplexType Name="SAP__Message">
                 <Property Name="code" Type="Edm.String" Nullable="false"/>
@@ -321,28 +490,132 @@
                 <Property Name="numericSeverity" Type="Edm.Byte" Nullable="false"/>
                 <Property Name="longtextUrl" Type="Edm.String"/>
             </ComplexType>
+            <Action Name="ApproveItem" EntitySetPath="_it" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
+            </Action>
+            <Action Name="DismantleEquipment" EntitySetPath="_it" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+                <Parameter Name="SuperordinateEquipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Parameter Name="EquipInstallationPositionNmbr" Type="Edm.String" Nullable="false" MaxLength="6"/>
+                <Parameter Name="FunctionalLocation" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Parameter Name="EquipmentInstallationDate" Type="Edm.Date" Nullable="true"/>
+                <Parameter Name="EquipmentInstallationTime" Type="Edm.TimeOfDay" Nullable="false"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+            </Action>
+            <Action Name="InstallEquipWithDataTransfer" EntitySetPath="_it" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+                <Parameter Name="SuperordinateEquipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Parameter Name="FunctionalLocation" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Parameter Name="EquipInstallationPositionNmbr" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Parameter Name="EquipmentInstallationDate" Type="Edm.Date" Nullable="true"/>
+                <Parameter Name="EquipmentInstallationTime" Type="Edm.TimeOfDay" Nullable="false"/>
+                <Parameter Name="LocationCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="RoomCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="PlantSectionCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="WorkCenterCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="ABCIndicatorCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="SortFieldCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="BusinessAreaCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="CostCenterCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="WBSElementCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="StandingOrderCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="SettlementOrderCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="MaintPlanningPlantCopyIsReqd" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="MaintWorkCenterCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="CatalogProfileCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="SalesOrganizationCopyIsReqd" Type="Edm.Boolean" Nullable="false"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+            </Action>
             <Action Name="CreateAudit" EntitySetPath="_it" IsBound="true">
-                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EquipBarcodeType" Nullable="false"/>
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_R_Equip_BarcodeTRType" Nullable="false"/>
                 <Parameter Name="AuditTitle" Type="Edm.String" Nullable="false" MaxLength="200"/>
                 <Parameter Name="AssignedAuditor" Type="Edm.String" Nullable="false" MaxLength="12"/>
-                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EquipBarcodeType" Nullable="false"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_R_Equip_BarcodeTRType" Nullable="false"/>
             </Action>
             <Action Name="CreateAuditHeader" EntitySetPath="_it" IsBound="true">
                 <Parameter Name="_it" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_HeaderType)" Nullable="false"/>
                 <Parameter Name="EquipmentList" Type="Edm.String" Nullable="false" MaxLength="1333"/>
                 <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_HeaderType" Nullable="false"/>
             </Action>
+            <Action Name="ResetEquipmentFromInactive" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+            </Action>
             <Action Name="ViewAudit" EntitySetPath="_it" IsBound="true">
-                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EquipBarcodeType" Nullable="false"/>
-                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EquipBarcodeType" Nullable="false"/>
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_R_Equip_BarcodeTRType" Nullable="false"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_R_Equip_BarcodeTRType" Nullable="false"/>
+            </Action>
+            <Action Name="RsetEquipFromMarkedForDeletion" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
             </Action>
             <Action Name="EditItem" EntitySetPath="_it" IsBound="true">
                 <Parameter Name="_it" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType)" Nullable="false"/>
                 <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
             </Action>
+            <Action Name="SetEquipToMarkedForDeletion" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+            </Action>
+            <Action Name="logEquipmentChanges" EntitySetPath="_it" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
+                <Parameter Name="FieldName" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Parameter Name="OldValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
+                <Parameter Name="NewValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
+                <Parameter Name="Comments" Type="Edm.String" Nullable="false"/>
+                <Parameter Name="EqCondition" Type="Edm.String" Nullable="false"/>
+                <Parameter Name="Equipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
+            </Action>
+            <Action Name="DismantleEquipWithDataTransfer" EntitySetPath="_it" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+                <Parameter Name="SuperordinateEquipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Parameter Name="FunctionalLocation" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Parameter Name="EquipInstallationPositionNmbr" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Parameter Name="EquipmentInstallationDate" Type="Edm.Date" Nullable="true"/>
+                <Parameter Name="EquipmentInstallationTime" Type="Edm.TimeOfDay" Nullable="false"/>
+                <Parameter Name="LocationCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="RoomCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="PlantSectionCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="WorkCenterCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="ABCIndicatorCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="SortFieldCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="BusinessAreaCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="CostCenterCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="WBSElementCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="StandingOrderCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="SettlementOrderCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="MaintPlanningPlantCopyIsReqd" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="MaintWorkCenterCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="CatalogProfileCopyIsRequested" Type="Edm.Boolean" Nullable="false"/>
+                <Parameter Name="SalesOrganizationCopyIsReqd" Type="Edm.Boolean" Nullable="false"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+            </Action>
+            <Action Name="saveEquipmentChanges" EntitySetPath="_it" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
+                <Parameter Name="FieldName" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Parameter Name="OldValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
+                <Parameter Name="NewValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
+                <Parameter Name="Comments" Type="Edm.String" Nullable="false"/>
+                <Parameter Name="EqCondition" Type="Edm.String" Nullable="false"/>
+                <Parameter Name="Equipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
+            </Action>
+            <Action Name="InstallEquipment" EntitySetPath="_it" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+                <Parameter Name="SuperordinateEquipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Parameter Name="EquipInstallationPositionNmbr" Type="Edm.String" Nullable="false" MaxLength="6"/>
+                <Parameter Name="FunctionalLocation" Type="Edm.String" Nullable="false" MaxLength="40"/>
+                <Parameter Name="EquipmentInstallationDate" Type="Edm.Date" Nullable="true"/>
+                <Parameter Name="EquipmentInstallationTime" Type="Edm.TimeOfDay" Nullable="false"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+            </Action>
+            <Action Name="SetEquipmentToInactive" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
+            </Action>
             <EntityContainer Name="Container">
-                <EntitySet Name="EquipBarcode" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EquipBarcodeType"/>
+                <EntitySet Name="AuditFieldConfig" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.AuditFieldConfigType"/>
                 <EntitySet Name="I_Equipment" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.I_EquipmentType"/>
+                <EntitySet Name="I_PlantStdVH" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.I_PlantStdVHType"/>
+                <EntitySet Name="R_EquipmentTP" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType"/>
                 <EntitySet Name="ZQMM_C_Audit_Change" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ChangeType">
                     <NavigationPropertyBinding Path="_AuditHeader" Target="ZQMM_C_Audit_Header"/>
                     <NavigationPropertyBinding Path="_AuditItems" Target="ZQMM_C_Audit_Items"/>
@@ -354,8 +627,53 @@
                 <EntitySet Name="ZQMM_C_Audit_Items" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType">
                     <NavigationPropertyBinding Path="_AuditChanges" Target="ZQMM_C_Audit_Change"/>
                     <NavigationPropertyBinding Path="_AuditHeader" Target="ZQMM_C_Audit_Header"/>
+                    <NavigationPropertyBinding Path="_Equipment" Target="R_EquipmentTP"/>
                 </EntitySet>
+                <EntitySet Name="ZQMM_I_CostCenter_VH" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_I_CostCenter_VHType"/>
+                <EntitySet Name="ZQMM_I_FLoc_VH" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_I_FLoc_VHType"/>
+                <EntitySet Name="ZQMM_I_Location" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_I_LocationType"/>
+                <EntitySet Name="ZQMM_R_Equip_BarcodeTR" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_R_Equip_BarcodeTRType"/>
             </EntityContainer>
+            <Annotations Target="SAP__self.I_PlantStdVHType/Plant">
+                <Annotation Term="SAP__common.Text" Path="PlantName"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Plant"/>
+                <Annotation Term="SAP__common.Heading" String="Plnt"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_PlantStdVHType">
+                <Annotation Term="SAP__common.Label" String="Plant"/>
+            </Annotations>
+            <Annotations Target="SAP__self.Container/I_PlantStdVH">
+                <Annotation Term="SAP__capabilities.SearchRestrictions">
+                    <Record>
+                        <PropertyValue Property="Searchable" Bool="true"/>
+                        <PropertyValue Property="UnsupportedExpressions" EnumMember="SAP__capabilities.SearchExpressions/AND SAP__capabilities.SearchExpressions/OR SAP__capabilities.SearchExpressions/NOT SAP__capabilities.SearchExpressions/group SAP__capabilities.SearchExpressions/phrase"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="Insertable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.DeleteRestrictions">
+                    <Record>
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.UpdateRestrictions">
+                    <Record>
+                        <PropertyValue Property="Updatable" Bool="false"/>
+                        <PropertyValue Property="QueryOptions">
+                            <Record>
+                                <PropertyValue Property="SelectSupported" Bool="true"/>
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__core.OptimisticConcurrency">
+                    <Collection/>
+                </Annotation>
+            </Annotations>
             <Annotations Target="SAP__self.I_EquipmentType/Equipment">
                 <Annotation Term="SAP__common.Text" Path="Equipment_Text"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
@@ -884,6 +1202,43 @@
                 </Annotation>
                 <Annotation Term="SAP__common.Messages" Path="SAP__Messages"/>
             </Annotations>
+            <Annotations Target="SAP__self.AuditFieldConfigType/FieldName">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Field Name"/>
+            </Annotations>
+            <Annotations Target="SAP__self.AuditFieldConfigType">
+                <Annotation Term="SAP__common.Label" String="Audit field configuration"/>
+            </Annotations>
+            <Annotations Target="SAP__self.Container/AuditFieldConfig">
+                <Annotation Term="SAP__capabilities.SearchRestrictions">
+                    <Record>
+                        <PropertyValue Property="Searchable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="Insertable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.DeleteRestrictions">
+                    <Record>
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.UpdateRestrictions">
+                    <Record>
+                        <PropertyValue Property="Updatable" Bool="false"/>
+                        <PropertyValue Property="QueryOptions">
+                            <Record>
+                                <PropertyValue Property="SelectSupported" Bool="true"/>
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__core.OptimisticConcurrency">
+                    <Collection/>
+                </Annotation>
+            </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AuditDocId">
                 <Annotation Term="SAP__common.Label" String="Audit Document #"/>
                 <Annotation Term="SAP__core.Immutable"/>
@@ -970,41 +1325,44 @@
                 <Annotation Term="SAP__common.Label" String="Changed By"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Last Changed By User"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AcquisitionValue">
-                <Annotation Term="SAP__measures.ISOCurrency" Path="Currency"/>
-                <Annotation Term="SAP__common.Label" String="Acquisition Value"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/MfgModelNumber">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/MaintenancePlant">
                 <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__common.Label" String="ManufactPartNo."/>
-                <Annotation Term="SAP__common.Heading" String="Manufacturer part number"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Manufacturer part number"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+                <Annotation Term="SAP__common.Label" String="Maintenance Plant"/>
+                <Annotation Term="SAP__common.Heading" String="Plnt"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/MfgSerialNumber">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AssetLocation">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Location"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Location of maintenance object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AssetRoom">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Room"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/CostCenter">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Cost Center"/>
+                <Annotation Term="SAP__common.Heading" String="Cost Ctr"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/FunctionalLocation">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Object ID"/>
+                <Annotation Term="SAP__common.Heading" String="Object Name"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Object ID of Functional Location or Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/ManufacturerSerialNumber">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Manuf. Serial Number"/>
                 <Annotation Term="SAP__common.Heading" String="Manufacturer's Serial Number"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Manufacturer's Serial Number"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/MfgCountry">
-                <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__common.Label" String="Mfr Ctry/Reg"/>
-                <Annotation Term="SAP__common.Heading" String="M C/R"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Country/Region of Manufacture"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/Currency">
-                <Annotation Term="SAP__common.IsCurrency"/>
-                <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__common.Label" String="Currency"/>
-                <Annotation Term="SAP__common.Heading" String="Crcy"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Currency Key"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/LastChangedByUser">
-                <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__common.Label" String="Changed By"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Name of Person Who Changed Object"/>
-            </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__EntityControl">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.HiddenFilter"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__OperationControl">
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__UI.HiddenFilter"/>
                 <Annotation Term="SAP__UI.Hidden"/>
@@ -1027,6 +1385,14 @@
                                 </Record>
                                 <Record>
                                     <PropertyValue Property="NavigationProperty" NavigationPropertyPath="_AuditHeader"/>
+                                    <PropertyValue Property="InsertRestrictions">
+                                        <Record>
+                                            <PropertyValue Property="Insertable" Bool="false"/>
+                                        </Record>
+                                    </PropertyValue>
+                                </Record>
+                                <Record>
+                                    <PropertyValue Property="NavigationProperty" NavigationPropertyPath="_Equipment"/>
                                     <PropertyValue Property="InsertRestrictions">
                                         <Record>
                                             <PropertyValue Property="Insertable" Bool="false"/>
@@ -1060,6 +1426,7 @@
                         <PropertyValue Property="NonFilterableProperties">
                             <Collection>
                                 <PropertyPath>__EntityControl</PropertyPath>
+                                <PropertyPath>__OperationControl</PropertyPath>
                             </Collection>
                         </PropertyValue>
                     </Record>
@@ -1071,6 +1438,7 @@
                                 <PropertyPath>Comments</PropertyPath>
                                 <PropertyPath>EqCondition</PropertyPath>
                                 <PropertyPath>__EntityControl</PropertyPath>
+                                <PropertyPath>__OperationControl</PropertyPath>
                             </Collection>
                         </PropertyValue>
                     </Record>
@@ -1098,6 +1466,15 @@
                 <Annotation Term="SAP__core.OptimisticConcurrency">
                     <Collection/>
                 </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.ApproveItem(SAP__self.ZQMM_C_Audit_ItemsType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/ApproveItem"/>
+            </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/logEquipmentChanges"/>
+            </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/saveEquipmentChanges"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType">
                 <Annotation Term="SAP__common.Label" String="Equipment Audit Items - Projection"/>
@@ -1265,6 +1642,12 @@
                         </PropertyValue>
                         <PropertyValue Property="RequestAtLeast">
                             <Collection>
+                                <PropertyPath>FunctionalLocation</PropertyPath>
+                                <PropertyPath>CostCenter</PropertyPath>
+                                <PropertyPath>AssetManufacturerName</PropertyPath>
+                                <PropertyPath>ManufacturerSerialNumber</PropertyPath>
+                                <PropertyPath>AssetLocation</PropertyPath>
+                                <PropertyPath>MaintenancePlant</PropertyPath>
                                 <PropertyPath>LastChangedAt</PropertyPath>
                                 <PropertyPath>AuditItemStatus</PropertyPath>
                                 <PropertyPath>AuditedAt</PropertyPath>
@@ -1515,7 +1898,7 @@
                         <Record Type="SAP__UI.ReferenceFacet">
                             <PropertyValue Property="Label" String="Items"/>
                             <PropertyValue Property="ID" String="idItemTable"/>
-                            <PropertyValue Property="Target" AnnotationPath="_AuditItems/@SAP__UI.LineItem"/>
+                            <PropertyValue Property="Target" AnnotationPath="_AuditItems/@SAP__UI.PresentationVariant"/>
                         </Record>
                     </Collection>
                 </Annotation>
@@ -1666,6 +2049,56 @@
                     <Record/>
                 </Annotation>
                 <Annotation Term="SAP__common.Messages" Path="SAP__Messages"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_FLoc_VHType/FunctionalLocation">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Functional location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_FLoc_VHType">
+                <Annotation Term="SAP__common.Label" String="Value Help for FLOC"/>
+                <Annotation Term="SAP__UI.LineItem">
+                    <Collection>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Value" Path="FunctionalLocation"/>
+                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
+                        </Record>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Value" Path="FunctionalLocationName"/>
+                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.Container/ZQMM_I_FLoc_VH">
+                <Annotation Term="SAP__capabilities.SearchRestrictions">
+                    <Record>
+                        <PropertyValue Property="Searchable" Bool="true"/>
+                        <PropertyValue Property="UnsupportedExpressions" EnumMember="SAP__capabilities.SearchExpressions/AND SAP__capabilities.SearchExpressions/OR SAP__capabilities.SearchExpressions/NOT SAP__capabilities.SearchExpressions/group SAP__capabilities.SearchExpressions/phrase"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="Insertable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.DeleteRestrictions">
+                    <Record>
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.UpdateRestrictions">
+                    <Record>
+                        <PropertyValue Property="Updatable" Bool="false"/>
+                        <PropertyValue Property="QueryOptions">
+                            <Record>
+                                <PropertyValue Property="SelectSupported" Bool="true"/>
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__core.OptimisticConcurrency">
+                    <Collection/>
+                </Annotation>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeDocumentType/ChangeDocObject">
                 <Annotation Term="SAP__common.IsUpperCase"/>
@@ -1846,22 +2279,82 @@
                     <Collection/>
                 </Annotation>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Equipment">
+            <Annotations Target="SAP__self.ZQMM_I_CostCenter_VHType/ControllingArea">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Controlling Area"/>
+                <Annotation Term="SAP__common.Heading" String="COAr"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_CostCenter_VHType/CostCenter">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Cost Center"/>
+                <Annotation Term="SAP__common.Heading" String="Cost Ctr"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_CostCenter_VHType">
+                <Annotation Term="SAP__common.Label" String="Value Help for CostCenter"/>
+                <Annotation Term="SAP__UI.LineItem">
+                    <Collection>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Value" Path="CostCenter"/>
+                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
+                        </Record>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Value" Path="CostCenterName"/>
+                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
+                        </Record>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Value" Path="ControllingArea"/>
+                            <Annotation Term="SAP__UI.Importance" EnumMember="SAP__UI.ImportanceType/High"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.Container/ZQMM_I_CostCenter_VH">
+                <Annotation Term="SAP__capabilities.SearchRestrictions">
+                    <Record>
+                        <PropertyValue Property="Searchable" Bool="true"/>
+                        <PropertyValue Property="UnsupportedExpressions" EnumMember="SAP__capabilities.SearchExpressions/AND SAP__capabilities.SearchExpressions/OR SAP__capabilities.SearchExpressions/NOT SAP__capabilities.SearchExpressions/group SAP__capabilities.SearchExpressions/phrase"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="Insertable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.DeleteRestrictions">
+                    <Record>
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.UpdateRestrictions">
+                    <Record>
+                        <PropertyValue Property="Updatable" Bool="false"/>
+                        <PropertyValue Property="QueryOptions">
+                            <Record>
+                                <PropertyValue Property="SelectSupported" Bool="true"/>
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__core.OptimisticConcurrency">
+                    <Collection/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Equipment">
                 <Annotation Term="SAP__common.Text" Path="EquipmentName"/>
                 <Annotation Term="SAP__core.Immutable"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Equipment"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Number"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/EquipmentTrim">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/EquipmentTrim">
                 <Annotation Term="SAP__common.Label" String="Trimmed Equipment"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/EquipmentName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/EquipmentName">
                 <Annotation Term="SAP__common.Label" String="Description"/>
                 <Annotation Term="SAP__common.Heading" String="Description of technical object"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Description of technical object"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/CompanyCode">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/CompanyCode">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.ValueListReferences">
                     <Collection>
@@ -1871,65 +2364,65 @@
                 <Annotation Term="SAP__common.Label" String="Company Code"/>
                 <Annotation Term="SAP__common.Heading" String="CoCd"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/UserCompanyCode">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/UserCompanyCode">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Company Code"/>
                 <Annotation Term="SAP__common.Heading" String="CoCd"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/EquipmentCategory">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/EquipmentCategory">
                 <Annotation Term="SAP__common.Text" Path="EquipmentCategoryDesc"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Equipment category"/>
                 <Annotation Term="SAP__common.Heading" String="C"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/TechnicalObjectType">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/TechnicalObjectType">
                 <Annotation Term="SAP__common.Text" Path="TechnicalObjectTypeDesc"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Object Type"/>
                 <Annotation Term="SAP__common.Heading" String="ObjectType"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Type of Technical Object"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/TechnicalObjectTypeDesc">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/TechnicalObjectTypeDesc">
                 <Annotation Term="SAP__common.Label" String="Object Type Text"/>
                 <Annotation Term="SAP__common.Heading" String="Object type text"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Text for Object Type"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Plant">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Plant">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Plant"/>
                 <Annotation Term="SAP__common.Heading" String="Plnt"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Division">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Division">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Division"/>
                 <Annotation Term="SAP__common.Heading" String="Dv"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/StorageLocation">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/StorageLocation">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Storage Location"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Material">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Material">
                 <Annotation Term="SAP__common.Text" Path="MaterialName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Material"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Material Number"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/MaintObjectInternalID">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/MaintObjectInternalID">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Object number"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Customer">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Customer">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Current customer"/>
                 <Annotation Term="SAP__common.Heading" String="CurCustomer"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Customer to Whom Serial Number was Delivered"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Supplier">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Supplier">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Vendor"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Vendor number"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/CreatedByUser">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/CreatedByUser">
                 <Annotation Term="SAP__common.Text" Path="CreatedByName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.ValueListReferences">
@@ -1940,17 +2433,17 @@
                 <Annotation Term="SAP__common.Label" String="Created By"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Name of Person Responsible for Creating the Object"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/LastChangedByUser">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/LastChangedByUser">
                 <Annotation Term="SAP__common.Text" Path="ChangedByName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Changed By"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Name of Person Who Changed Object"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/AcquisitionValue">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/AcquisitionValue">
                 <Annotation Term="SAP__measures.ISOCurrency" Path="Currency"/>
                 <Annotation Term="SAP__common.Label" String="Acquisition Value"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Currency">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Currency">
                 <Annotation Term="SAP__common.IsCurrency"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__UI.HiddenFilter"/>
@@ -1958,39 +2451,39 @@
                 <Annotation Term="SAP__common.Heading" String="Crcy"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Currency Key"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/ManufacturerCountry">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/ManufacturerCountry">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Mfr Ctry/Reg"/>
                 <Annotation Term="SAP__common.Heading" String="M C/R"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Country/Region of Manufacture"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/ManufacturerSerialNumber">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/ManufacturerSerialNumber">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Manuf. Serial Number"/>
                 <Annotation Term="SAP__common.Heading" String="Manufacturer's Serial Number"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Manufacturer's Serial Number"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/PartNumber">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/PartNumber">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="ManufactPartNo."/>
                 <Annotation Term="SAP__common.Heading" String="Manufacturer part number"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Manufacturer part number"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/GrossWeight">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/GrossWeight">
                 <Annotation Term="SAP__measures.Unit" Path="GrossWeightUnit"/>
                 <Annotation Term="SAP__common.Label" String="Weight of object"/>
                 <Annotation Term="SAP__common.Heading" String="Weight"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/GrossWeightUnit">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/GrossWeightUnit">
                 <Annotation Term="SAP__common.IsUnit"/>
                 <Annotation Term="SAP__common.Label" String="Unit of weight"/>
                 <Annotation Term="SAP__common.Heading" String="Un."/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/SizeOrDimensionText">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/SizeOrDimensionText">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Purchase Doc"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/FunctionalLocation">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/FunctionalLocation">
                 <Annotation Term="SAP__common.Text" Path="FunctionalLocationName"/>
                 <Annotation Term="SAP__common.ValueListReferences">
                     <Collection>
@@ -1998,7 +2491,7 @@
                     </Collection>
                 </Annotation>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/CostCenter">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/CostCenter">
                 <Annotation Term="SAP__common.Text" Path="CostCenterName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.ValueListReferences">
@@ -2009,7 +2502,7 @@
                 <Annotation Term="SAP__common.Label" String="Cost Center"/>
                 <Annotation Term="SAP__common.Heading" String="Cost Ctr"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/MaintPlant">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/MaintPlant">
                 <Annotation Term="SAP__common.Text" Path="PlantName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.ValueListReferences">
@@ -2020,7 +2513,7 @@
                 <Annotation Term="SAP__common.Label" String="Maintenance Plant"/>
                 <Annotation Term="SAP__common.Heading" String="Plnt"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Location">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Location">
                 <Annotation Term="SAP__common.Text" Path="LocationName"/>
                 <Annotation Term="SAP__common.ValueListForValidation" String=""/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
@@ -2032,59 +2525,59 @@
                 <Annotation Term="SAP__common.Label" String="Location"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Location of maintenance object"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/SortField">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/SortField">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Sort Field"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/LatestAuditDocId">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/LatestAuditDocId">
                 <Annotation Term="SAP__common.IsDigitSequence"/>
                 <Annotation Term="SAP__common.Label" String="Audit Document ID"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Document ID"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/LatestAuditBy">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/LatestAuditBy">
                 <Annotation Term="SAP__common.Text" Path="CreatedByName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Created By"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Created By User"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/StatusCode">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/StatusCode">
                 <Annotation Term="SAP__common.Text" Path="StatusName"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/StatusProfile">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/StatusProfile">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Status Profile"/>
                 <Annotation Term="SAP__common.Heading" String="StatProf"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/NewAuditDocId">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/NewAuditDocId">
                 <Annotation Term="SAP__common.IsDigitSequence"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/__EntityControl">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/__EntityControl">
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__UI.HiddenFilter"/>
                 <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/__OperationControl">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/__OperationControl">
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__UI.HiddenFilter"/>
                 <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
-            <Annotations Target="SAP__self.CreateAudit(SAP__self.EquipBarcodeType)/AuditTitle">
+            <Annotations Target="SAP__self.CreateAudit(SAP__self.ZQMM_R_Equip_BarcodeTRType)/AuditTitle">
                 <Annotation Term="SAP__common.Label" String="Audit Description"/>
                 <Annotation Term="SAP__common.Heading" String="Title"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Title"/>
             </Annotations>
-            <Annotations Target="SAP__self.CreateAudit(SAP__self.EquipBarcodeType)/AssignedAuditor">
+            <Annotations Target="SAP__self.CreateAudit(SAP__self.ZQMM_R_Equip_BarcodeTRType)/AssignedAuditor">
                 <Annotation Term="SAP__common.Label" String="Assign Auditor (Optional)"/>
                 <Annotation Term="SAP__common.Heading" String="User Name"/>
                 <Annotation Term="SAP__common.QuickInfo" String="User Name"/>
             </Annotations>
-            <Annotations Target="SAP__self.CreateAudit(SAP__self.EquipBarcodeType)">
+            <Annotations Target="SAP__self.CreateAudit(SAP__self.ZQMM_R_Equip_BarcodeTRType)">
                 <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/CreateAudit"/>
             </Annotations>
-            <Annotations Target="SAP__self.ViewAudit(SAP__self.EquipBarcodeType)">
+            <Annotations Target="SAP__self.ViewAudit(SAP__self.ZQMM_R_Equip_BarcodeTRType)">
                 <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/ViewAudit"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType">
                 <Annotation Term="SAP__common.Label" String="Equipment Audit Barcode root view"/>
                 <Annotation Term="SAP__UI.LineItem">
                     <Collection>
@@ -2114,7 +2607,7 @@
                 </Annotation>
                 <Annotation Term="SAP__common.Messages" Path="SAP__Messages"/>
             </Annotations>
-            <Annotations Target="SAP__self.Container/EquipBarcode">
+            <Annotations Target="SAP__self.Container/ZQMM_R_Equip_BarcodeTR">
                 <Annotation Term="SAP__capabilities.SearchRestrictions">
                     <Record>
                         <PropertyValue Property="Searchable" Bool="false"/>
@@ -2166,6 +2659,578 @@
                 <Annotation Term="SAP__capabilities.UpdateRestrictions">
                     <Record>
                         <PropertyValue Property="Updatable" Path="__EntityControl/Updatable"/>
+                        <PropertyValue Property="QueryOptions">
+                            <Record>
+                                <PropertyValue Property="SelectSupported" Bool="true"/>
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__core.OptimisticConcurrency">
+                    <Collection/>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/Equipment">
+                <Annotation Term="SAP__core.Immutable"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Equipment"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ValidityEndDate">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Valid To"/>
+                <Annotation Term="SAP__common.Heading" String="to"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Valid To Date"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ValidityEndTime">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Time"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment usage period time stamp"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentCategory">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Equipment category"/>
+                <Annotation Term="SAP__common.Heading" String="C"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/TechnicalObjectType">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Object Type"/>
+                <Annotation Term="SAP__common.Heading" String="ObjectType"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Type of Technical Object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/AuthorizationGroup">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="AuthorizGroup"/>
+                <Annotation Term="SAP__common.Heading" String="AGrp"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Technical Object Authorization Group"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/GrossWeight">
+                <Annotation Term="SAP__measures.Unit" Path="GrossWeightUnit"/>
+                <Annotation Term="SAP__common.Label" String="Weight of object"/>
+                <Annotation Term="SAP__common.Heading" String="Weight"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/GrossWeightUnit">
+                <Annotation Term="SAP__common.IsUnit"/>
+                <Annotation Term="SAP__common.Label" String="Unit of weight"/>
+                <Annotation Term="SAP__common.Heading" String="Un."/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/SizeOrDimensionText">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Purchase Doc"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/InventoryNumber">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Inventory Number"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Inventory number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/AcquisitionValue">
+                <Annotation Term="SAP__measures.ISOCurrency" Path="Currency"/>
+                <Annotation Term="SAP__common.Label" String="Acquisition Value"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/Currency">
+                <Annotation Term="SAP__common.IsCurrency"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Currency"/>
+                <Annotation Term="SAP__common.Heading" String="Crcy"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Currency Key"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ManufacturerCountry">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Mfr Ctry/Reg"/>
+                <Annotation Term="SAP__common.Heading" String="M C/R"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Country/Region of Manufacture"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ConstructionYear">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Construction year"/>
+                <Annotation Term="SAP__common.Heading" String="ConY"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Year of construction"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ConstructionMonth">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Construction month"/>
+                <Annotation Term="SAP__common.Heading" String="CM"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Month of construction"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentManufacturerPrtNmbr">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="ManufactPartNo."/>
+                <Annotation Term="SAP__common.Heading" String="Manufacturer part number"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Manufacturer part number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ManufacturerSerialNumber">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Manuf. Serial Number"/>
+                <Annotation Term="SAP__common.Heading" String="Manufacturer's Serial Number"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Manufacturer's Serial Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MaintenancePlant">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Maintenance Plant"/>
+                <Annotation Term="SAP__common.Heading" String="Plnt"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/AssetLocation">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Location"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Location of maintenance object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/AssetRoom">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Room"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/PlantSection">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Plant Section"/>
+                <Annotation Term="SAP__common.Heading" String="PlS"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/WorkCenter">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Work Center"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/WorkCenterInternalID">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsDigitSequence"/>
+                <Annotation Term="SAP__common.Label" String="PP work center"/>
+                <Annotation Term="SAP__common.Heading" String="PP WkCtr"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Object ID of PP work center"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/WorkCenterPlant">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Plant"/>
+                <Annotation Term="SAP__common.Heading" String="Plnt"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ABCIndicator">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="ABC Indicator"/>
+                <Annotation Term="SAP__common.QuickInfo" String="ABC Indicator for Technical Object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MaintObjectFreeDefinedAttrib">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Sort Field"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/FormOfAddress">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Title Key"/>
+                <Annotation Term="SAP__common.Heading" String="Key"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Form-of-Address Key"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/PostalCode">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Postal Code"/>
+                <Annotation Term="SAP__common.Heading" String="Postl Code"/>
+                <Annotation Term="SAP__common.QuickInfo" String="City postal code"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/Region">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Region"/>
+                <Annotation Term="SAP__common.Heading" String="Rg"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Region (State, Province, County)"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/Country">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Country/Region Key"/>
+                <Annotation Term="SAP__common.Heading" String="C/R"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/PhoneNumber">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Telephone"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Telephone No.: Dialing Code and Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/AddressFaxNumber">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Fax"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Fax Number: Dialing Code and Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/CompanyCode">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Company Code"/>
+                <Annotation Term="SAP__common.Heading" String="CoCd"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/BusinessArea">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Business Area"/>
+                <Annotation Term="SAP__common.Heading" String="BusA"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MasterFixedAsset">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Asset"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Main Asset Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/FixedAsset">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Sub-number"/>
+                <Annotation Term="SAP__common.Heading" String="SNo."/>
+                <Annotation Term="SAP__common.QuickInfo" String="Asset Subnumber"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/CostCenter">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Cost Center"/>
+                <Annotation Term="SAP__common.Heading" String="Cost Ctr"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ControllingArea">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Controlling Area"/>
+                <Annotation Term="SAP__common.Heading" String="COAr"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/WBSElementExternalID">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="WBS Element"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Work Breakdown Structure Element (WBS Element) Edited"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/SettlementOrder">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Settlement Order"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Settlement order"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MaintenancePlanningPlant">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Planning Plant"/>
+                <Annotation Term="SAP__common.Heading" String="PlPl"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Maintenance Planning Plant"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MaintenancePlannerGroup">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Maint. Planner Group"/>
+                <Annotation Term="SAP__common.Heading" String="PG"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Planner Group for Customer Service and Plant Maintenance"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MainWorkCenter">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Main Work Center"/>
+                <Annotation Term="SAP__common.Heading" String="Mn.wk.ctr"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Main work center for maintenance tasks"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MainWorkCenterInternalID">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsDigitSequence"/>
+                <Annotation Term="SAP__common.Label" String="Work Center"/>
+                <Annotation Term="SAP__common.Heading" String="WorkCtr"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Object ID of the Work Center"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MainWorkCenterPlant">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Plant for WorkCenter"/>
+                <Annotation Term="SAP__common.Heading" String="Plnt WorkCenter"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Plant associated with main work center"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/CatalogProfile">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Catalog Profile"/>
+                <Annotation Term="SAP__common.Heading" String="Cat.Prof."/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/FunctionalLocation">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Object ID"/>
+                <Annotation Term="SAP__common.Heading" String="Object Name"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Object ID of Functional Location or Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/FunctionalLocationLabelName">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Functional Location"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Functional Location Label"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/FunctionalLocationName">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="FunctLocDescrip."/>
+                <Annotation Term="SAP__common.Heading" String="Description of functional location"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Description of functional location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipInstallationPositionNmbr">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Position"/>
+                <Annotation Term="SAP__common.Heading" String="Pos."/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment position at InstallLoc (Superior Equip./FunctLoc)"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/SuperordinateEquipment">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Superord. Equipment"/>
+                <Annotation Term="SAP__common.Heading" String="Superord.Equipment"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Superordinate Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/TechnicalObjectSortCode">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Technical IdentNo."/>
+                <Annotation Term="SAP__common.Heading" String="Technical identification no."/>
+                <Annotation Term="SAP__common.QuickInfo" String="Technical identification number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ConstructionMaterial">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Construction Type"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Construction type material of the object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/Material">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Material"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Material Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/SerialNumber">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Field length 18"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/UniqueItemIdentifier">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="UII"/>
+                <Annotation Term="SAP__common.Heading" String="Unique Item Identifier"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Unique Item Identifier"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/UniqueItemIdentifierStrucType">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="IUID Type"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Structure Type of UII"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/UniqueItemIdentifierRespPlant">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Resp. Plant UII"/>
+                <Annotation Term="SAP__common.Heading" String="Plant Responsible for UII"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Plant Responsible for UII"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/SalesOrganization">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Sales Organization"/>
+                <Annotation Term="SAP__common.Heading" String="SOrg."/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/DistributionChannel">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Distribution Channel"/>
+                <Annotation Term="SAP__common.Heading" String="DChl"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/OrganizationDivision">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Division"/>
+                <Annotation Term="SAP__common.Heading" String="Dv"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/SalesGroup">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Sales Group"/>
+                <Annotation Term="SAP__common.Heading" String="SGrp"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/SalesOffice">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Sales Office"/>
+                <Annotation Term="SAP__common.Heading" String="SOff."/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/CreationDate">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Created On"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Record Creation Date"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/CreatedByUser">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Created By"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Name of Person Responsible for Creating the Object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/LastChangedByUser">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Changed By"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Name of Person Who Changed Object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/LastChangeDateTime">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Short Time Stamp"/>
+                <Annotation Term="SAP__common.Heading" String="Short Form of Time Stamp"/>
+                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/NextEquipUsagePeriodSqncNmbr">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsDigitSequence"/>
+                <Annotation Term="SAP__common.Label" String="NxtUsagePeriodNo."/>
+                <Annotation Term="SAP__common.Heading" String="NxP"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Number of next EquipUsagePeriod on same day"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MaintObjectLocAcctAssgmtNmbr">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Loc/Acct Assignment"/>
+                <Annotation Term="SAP__common.Heading" String="Loc/AccAssmt"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Location and account assignment for technical object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/MaintObjectInternalID">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Object number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipUsagePeriodSequenceNumber">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.IsDigitSequence"/>
+                <Annotation Term="SAP__common.Label" String="UsgePerConsecNo."/>
+                <Annotation Term="SAP__common.Heading" String="ECN"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Consecutive numbering of EquipUsagePeriods on same day"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentIsAtCustomer">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentIsAvailable">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentIsInWarehouse">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentIsAssignedToDelivery">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentIsMarkedForDeletion">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentIsInstalled">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipIsAllocToSuperiorEquip">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentIsInactive">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipHasSubOrdinateEquipment">
+                <Annotation Term="SAP__common.Label" String="Equipment Has Subordinate Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__EntityControl">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.HiddenFilter"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl">
+                <Annotation Term="SAP__core.Computed"/>
+                <Annotation Term="SAP__UI.HiddenFilter"/>
+                <Annotation Term="SAP__UI.Hidden"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipment(SAP__self.R_EquipmentTPType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/DismantleEquipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/InstallEquipWithDataTransfer"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ResetEquipmentFromInactive(SAP__self.R_EquipmentTPType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/ResetEquipmentFromInactive"/>
+            </Annotations>
+            <Annotations Target="SAP__self.RsetEquipFromMarkedForDeletion(SAP__self.R_EquipmentTPType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/RsetEquipFromMarkedForDeletion"/>
+            </Annotations>
+            <Annotations Target="SAP__self.SetEquipToMarkedForDeletion(SAP__self.R_EquipmentTPType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/SetEquipToMarkedForDeletion"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/DismantleEquipWithDataTransfer"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipment(SAP__self.R_EquipmentTPType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/InstallEquipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.SetEquipmentToInactive(SAP__self.R_EquipmentTPType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/SetEquipmentToInactive"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType">
+                <Annotation Term="SAP__common.Label" String="Equipment"/>
+                <Annotation Term="SAP__common.SAPObjectNodeType">
+                    <Record>
+                        <PropertyValue Property="Name" String="Equipment"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__common.Messages" Path="SAP__Messages"/>
+            </Annotations>
+            <Annotations Target="SAP__self.Container/R_EquipmentTP">
+                <Annotation Term="SAP__capabilities.SearchRestrictions">
+                    <Record>
+                        <PropertyValue Property="Searchable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.FilterRestrictions">
+                    <Record>
+                        <PropertyValue Property="NonFilterableProperties">
+                            <Collection>
+                                <PropertyPath>__EntityControl</PropertyPath>
+                                <PropertyPath>__OperationControl</PropertyPath>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.SortRestrictions">
+                    <Record>
+                        <PropertyValue Property="NonSortableProperties">
+                            <Collection>
+                                <PropertyPath>__EntityControl</PropertyPath>
+                                <PropertyPath>__OperationControl</PropertyPath>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="RequiredProperties">
+                            <Collection>
+                                <PropertyPath>EquipmentCategory</PropertyPath>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.DeleteRestrictions">
+                    <Record>
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.UpdateRestrictions">
+                    <Record>
+                        <PropertyValue Property="Updatable" Path="__EntityControl/Updatable"/>
+                        <PropertyValue Property="QueryOptions">
+                            <Record>
+                                <PropertyValue Property="SelectSupported" Bool="true"/>
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__core.OptimisticConcurrency">
+                    <Collection>
+                        <PropertyPath>LastChangeDateTime</PropertyPath>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_LocationType/Location">
+                <Annotation Term="SAP__common.Text" Path="LocationName"/>
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_LocationType/Plant">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Plant"/>
+                <Annotation Term="SAP__common.Heading" String="Plnt"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_LocationType/AddressID">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Address Number"/>
+                <Annotation Term="SAP__common.Heading" String="Addr. No."/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_LocationType">
+                <Annotation Term="SAP__common.Label" String="Similar to I_Location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.Container/ZQMM_I_Location">
+                <Annotation Term="SAP__capabilities.SearchRestrictions">
+                    <Record>
+                        <PropertyValue Property="Searchable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="Insertable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.DeleteRestrictions">
+                    <Record>
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.UpdateRestrictions">
+                    <Record>
+                        <PropertyValue Property="Updatable" Bool="false"/>
                         <PropertyValue Property="QueryOptions">
                             <Record>
                                 <PropertyValue Property="SelectSupported" Bool="true"/>
@@ -2257,10 +3322,13 @@
                 <Annotation Term="SAP__common.Label" String="Time Stamp"/>
                 <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/CreatedByName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/CreatedByName">
                 <Annotation Term="SAP__UI.HiddenFilter"/>
                 <Annotation Term="SAP__common.Label" String="Full Name"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Full Name of Person"/>
+            </Annotations>
+            <Annotations Target="SAP__self.I_PlantStdVHType/PlantName">
+                <Annotation Term="SAP__common.Label" String="Plant Name"/>
             </Annotations>
             <Annotations Target="SAP__self.I_EquipmentType/EquipmentOID">
                 <Annotation Term="SAP__common.Label" String="Equip Obj Instce ID"/>
@@ -2332,6 +3400,11 @@
                 <Annotation Term="SAP__common.Heading" String="End-of-Use"/>
                 <Annotation Term="SAP__common.QuickInfo" String="End-of-Use Date of the Technical Object"/>
             </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/ChangeId">
+                <Annotation Term="SAP__common.Label" String="UUID"/>
+                <Annotation Term="SAP__common.Heading" String="Unique universal identifier"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Global Unique ID for table"/>
+            </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/LastChangedAt">
                 <Annotation Term="SAP__common.Label" String="Time Stamp"/>
                 <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
@@ -2340,12 +3413,12 @@
                 <Annotation Term="SAP__common.Label" String="Time Stamp"/>
                 <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/__EntityControl/Deletable">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/__EntityControl/Updatable">
                 <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/__EntityControl/Updatable">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/__EntityControl/Deletable">
                 <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
@@ -2370,38 +3443,35 @@
                 <Annotation Term="SAP__common.Label" String="Full Name"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Full Name of Person"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AcquisitionDate">
-                <Annotation Term="SAP__common.Label" String="Acquisition date"/>
-                <Annotation Term="SAP__common.Heading" String="Date"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/MfgName">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AssetManufacturerName">
                 <Annotation Term="SAP__common.Label" String="Manufacturer"/>
                 <Annotation Term="SAP__common.Heading" String="Manufacturer of Asset"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Manufacturer of Asset"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/LastChangeDateTime">
-                <Annotation Term="SAP__common.Label" String="Short Time Stamp"/>
-                <Annotation Term="SAP__common.Heading" String="Short Form of Time Stamp"/>
-                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/EquipmentIsMarkedForDeletion">
-                <Annotation Term="SAP__common.Label" String="Checkbox"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/EquipmentIsInstalled">
-                <Annotation Term="SAP__common.Label" String="Checkbox"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/EquipmentIsInactive">
-                <Annotation Term="SAP__common.Label" String="Checkbox"/>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__EntityControl/Updatable">
+                <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__EntityControl/Deletable">
                 <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__EntityControl/Updatable">
-                <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
-                <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__OperationControl/ApproveItem">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__OperationControl/logEquipmentChanges">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__OperationControl/saveEquipmentChanges">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_HeaderType/FunctionalLocationName">
                 <Annotation Term="SAP__common.Label" String="FunctLocDescrip."/>
@@ -2421,123 +3491,609 @@
                 <Annotation Term="SAP__common.Heading" String="Dynamic Create by Association Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Create via Association Control Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_HeaderType/__EntityControl/Deletable">
-                <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
-                <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
-            </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_HeaderType/__EntityControl/Updatable">
                 <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/EquipmentCategoryDesc">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_HeaderType/__EntityControl/Deletable">
+                <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_FLoc_VHType/FunctionalLocationName">
+                <Annotation Term="SAP__common.Label" String="FunctLocDescrip."/>
+                <Annotation Term="SAP__common.Heading" String="Description of functional location"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Description of functional location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_CostCenter_VHType/ValidityEndDate">
+                <Annotation Term="SAP__common.Label" String="Valid To"/>
+                <Annotation Term="SAP__common.Heading" String="to"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Valid To Date"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_CostCenter_VHType/ValidityStartDate">
+                <Annotation Term="SAP__common.Label" String="Valid From"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Valid-From Date"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_CostCenter_VHType/CostCenterName">
+                <Annotation Term="SAP__common.Label" String="Cost Center Name"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_CostCenter_VHType/CostCenterDescription">
+                <Annotation Term="SAP__common.Label" String="Cost Center Desc."/>
+                <Annotation Term="SAP__common.Heading" String="CoCtr"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Description of Cost Center"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/EquipmentCategoryDesc">
                 <Annotation Term="SAP__common.Label" String="Equipment CatDesc."/>
                 <Annotation Term="SAP__common.Heading" String="Equipment category description"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment category description"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/DivisionName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/DivisionName">
                 <Annotation Term="SAP__common.Label" String="Division Description"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/StorageLocationName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/StorageLocationName">
                 <Annotation Term="SAP__common.Label" String="Storage Loc. Name"/>
                 <Annotation Term="SAP__common.Heading" String="Storage Location Name"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Storage Location Name"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/MaterialName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/MaterialName">
                 <Annotation Term="SAP__common.Label" String="Material Description"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/CustomerName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/CustomerName">
                 <Annotation Term="SAP__common.Label" String="Name of Customer"/>
                 <Annotation Term="SAP__common.Heading" String="Customer"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/SupplierName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/SupplierName">
                 <Annotation Term="SAP__common.Label" String="Name of Supplier"/>
                 <Annotation Term="SAP__common.Heading" String="Supplier"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/CreationDate">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/CreationDate">
                 <Annotation Term="SAP__common.Label" String="Created On"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Record Creation Date"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/ChangedByName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/ChangedByName">
                 <Annotation Term="SAP__common.Label" String="Full Name"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Full Name of Person"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/LastChangeDate">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/LastChangeDate">
                 <Annotation Term="SAP__common.Label" String="Changed On"/>
                 <Annotation Term="SAP__common.Heading" String="Chngd On"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Last Changed On"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/AcquisitionDate">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/AcquisitionDate">
                 <Annotation Term="SAP__common.Label" String="Acquisition date"/>
                 <Annotation Term="SAP__common.Heading" String="Date"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/Manufacturer">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/Manufacturer">
                 <Annotation Term="SAP__common.Label" String="Manufacturer"/>
                 <Annotation Term="SAP__common.Heading" String="Manufacturer of Asset"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Manufacturer of Asset"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/ModelNumber">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/ModelNumber">
                 <Annotation Term="SAP__common.Label" String="Model number"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Manufacturer model number"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/CostCenterName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/CostCenterName">
                 <Annotation Term="SAP__common.Label" String="Cost Center Name"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/PlantName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/PlantName">
                 <Annotation Term="SAP__common.Label" String="Plant Name"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/LocationName">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/LocationName">
                 <Annotation Term="SAP__common.Label" String="Location Name"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/LatestAuditAt">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/LatestAuditAt">
                 <Annotation Term="SAP__common.Label" String="Time Stamp"/>
                 <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/__EntityControl/Deletable">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/__EntityControl/Updatable">
                 <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/__EntityControl/Updatable">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/__EntityControl/Deletable">
                 <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/__OperationControl/CreateAudit">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/__OperationControl/CreateAudit">
                 <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeType/__OperationControl/ViewAudit">
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTRType/__OperationControl/ViewAudit">
                 <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ValidityStartDate">
+                <Annotation Term="SAP__common.Label" String="Valid From"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Valid-From Date"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentOID">
+                <Annotation Term="SAP__common.Label" String="Equip Obj Instce ID"/>
+                <Annotation Term="SAP__common.Heading" String="Equipment Object Instance ID"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Object Instance ID of an Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentName">
+                <Annotation Term="SAP__common.Label" String="Object Description"/>
+                <Annotation Term="SAP__common.Heading" String="Description of technical object"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Description of technical object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/OperationStartDate">
+                <Annotation Term="SAP__common.Label" String="Start-up date"/>
+                <Annotation Term="SAP__common.Heading" String="Start from"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Start-up Date of the Technical Object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/AcquisitionDate">
+                <Annotation Term="SAP__common.Label" String="Acquisition date"/>
+                <Annotation Term="SAP__common.Heading" String="Date"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/AssetManufacturerName">
+                <Annotation Term="SAP__common.Label" String="Manufacturer"/>
+                <Annotation Term="SAP__common.Heading" String="Manufacturer of Asset"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Manufacturer of Asset"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/ManufacturerPartTypeName">
+                <Annotation Term="SAP__common.Label" String="Model number"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Manufacturer model number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/EquipmentEndOfUseDate">
+                <Annotation Term="SAP__common.Label" String="End-of-Use Date"/>
+                <Annotation Term="SAP__common.Heading" String="End-of-Use"/>
+                <Annotation Term="SAP__common.QuickInfo" String="End-of-Use Date of the Technical Object"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/BusinessPartnerName1">
+                <Annotation Term="SAP__common.Label" String="Name"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Name 1"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/BusinessPartnerName2">
+                <Annotation Term="SAP__common.Label" String="Name 2"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/CityName">
+                <Annotation Term="SAP__common.Label" String="City"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/HouseNumber">
+                <Annotation Term="SAP__common.Label" String="House Number"/>
+                <Annotation Term="SAP__common.Heading" String="House No."/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/HouseNumberSupplementText">
+                <Annotation Term="SAP__common.Label" String="Supplement"/>
+                <Annotation Term="SAP__common.QuickInfo" String="House number supplement"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/Building">
+                <Annotation Term="SAP__common.Label" String="Building Code"/>
+                <Annotation Term="SAP__common.Heading" String="Building"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Building (Number or Code)"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/Floor">
+                <Annotation Term="SAP__common.Label" String="Floor"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Floor in building"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/RoomNumber">
+                <Annotation Term="SAP__common.Label" String="Room Number"/>
+                <Annotation Term="SAP__common.Heading" String="Room No."/>
+                <Annotation Term="SAP__common.QuickInfo" String="Room or Apartment Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/StreetName">
+                <Annotation Term="SAP__common.Label" String="Street"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__EntityControl/Updatable">
+                <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__EntityControl/Deletable">
+                <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl/DismantleEquipment">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl/DismantleEquipWithDataTransfer">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl/InstallEquipment">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl/InstallEquipWithDataTransfer">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl/ResetEquipmentFromInactive">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl/RsetEquipFromMarkedForDeletion">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl/SetEquipmentToInactive">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPType/__OperationControl/SetEquipToMarkedForDeletion">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_I_LocationType/LocationName">
+                <Annotation Term="SAP__common.Label" String="Location Name"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_HeaderCbAControl/_AuditItems">
                 <Annotation Term="SAP__common.Label" String="Dynamic CbA-Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Create by Association Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Create via Association Control Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeOperationControl/CreateAudit">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsOperationControl/ApproveItem">
                 <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.EquipBarcodeOperationControl/ViewAudit">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsOperationControl/logEquipmentChanges">
                 <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsOperationControl/saveEquipmentChanges">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTROperationControl/CreateAudit">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_R_Equip_BarcodeTROperationControl/ViewAudit">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPOperationControl/DismantleEquipment">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPOperationControl/DismantleEquipWithDataTransfer">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPOperationControl/InstallEquipment">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPOperationControl/InstallEquipWithDataTransfer">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPOperationControl/ResetEquipmentFromInactive">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPOperationControl/RsetEquipFromMarkedForDeletion">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPOperationControl/SetEquipmentToInactive">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.R_EquipmentTPOperationControl/SetEquipToMarkedForDeletion">
+                <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.EntityControl/Updatable">
+                <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
+                <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
             <Annotations Target="SAP__self.EntityControl/Deletable">
                 <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.EntityControl/Updatable">
-                <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
-                <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
+            <Annotations Target="SAP__self.DismantleEquipment(SAP__self.R_EquipmentTPType)/SuperordinateEquipment">
+                <Annotation Term="SAP__common.Label" String="Superord. Equipment"/>
+                <Annotation Term="SAP__common.Heading" String="Superord.Equipment"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Superordinate Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipment(SAP__self.R_EquipmentTPType)/EquipInstallationPositionNmbr">
+                <Annotation Term="SAP__common.Label" String="Item (SD)"/>
+                <Annotation Term="SAP__common.Heading" String="Item"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Item number of the SD document"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipment(SAP__self.R_EquipmentTPType)/FunctionalLocation">
+                <Annotation Term="SAP__common.Label" String="Functional Location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipment(SAP__self.R_EquipmentTPType)/EquipmentInstallationDate">
+                <Annotation Term="SAP__common.Label" String="Changed On"/>
+                <Annotation Term="SAP__common.Heading" String="Chngd On"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Last Changed On"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipment(SAP__self.R_EquipmentTPType)/EquipmentInstallationTime">
+                <Annotation Term="SAP__common.Label" String="Time"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment usage period time stamp"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SuperordinateEquipment">
+                <Annotation Term="SAP__common.Label" String="Superord. Equipment"/>
+                <Annotation Term="SAP__common.Heading" String="Superord.Equipment"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Superordinate Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/FunctionalLocation">
+                <Annotation Term="SAP__common.Label" String="Functional Location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/EquipInstallationPositionNmbr">
+                <Annotation Term="SAP__common.Label" String="Position"/>
+                <Annotation Term="SAP__common.Heading" String="Pos."/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment position at InstallLoc (Superior Equip./FunctLoc)"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/EquipmentInstallationDate">
+                <Annotation Term="SAP__common.Label" String="Changed On"/>
+                <Annotation Term="SAP__common.Heading" String="Chngd On"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Last Changed On"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/EquipmentInstallationTime">
+                <Annotation Term="SAP__common.Label" String="Time"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment usage period time stamp"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/LocationCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/RoomCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/PlantSectionCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/WorkCenterCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/ABCIndicatorCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SortFieldCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/BusinessAreaCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/CostCenterCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/WBSElementCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/StandingOrderCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SettlementOrderCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/MaintPlanningPlantCopyIsReqd">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/MaintWorkCenterCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/CatalogProfileCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SalesOrganizationCopyIsReqd">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/FieldName">
+                <Annotation Term="SAP__common.Label" String="Field Name"/>
+            </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/OldValue">
+                <Annotation Term="SAP__common.Label" String="New Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="New Content of Changed Field"/>
+            </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/NewValue">
+                <Annotation Term="SAP__common.Label" String="Old Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Old Content of Changed Field"/>
+            </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Comments">
+                <Annotation Term="SAP__common.Label" String="Comments"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Comments"/>
+            </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/EqCondition">
+                <Annotation Term="SAP__common.Label" String="Condition"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Condition"/>
+            </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Equipment">
+                <Annotation Term="SAP__common.Label" String="Equipment"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SuperordinateEquipment">
+                <Annotation Term="SAP__common.Label" String="Superord. Equipment"/>
+                <Annotation Term="SAP__common.Heading" String="Superord.Equipment"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Superordinate Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/FunctionalLocation">
+                <Annotation Term="SAP__common.Label" String="Functional Location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/EquipInstallationPositionNmbr">
+                <Annotation Term="SAP__common.Label" String="Position"/>
+                <Annotation Term="SAP__common.Heading" String="Pos."/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment position at InstallLoc (Superior Equip./FunctLoc)"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/EquipmentInstallationDate">
+                <Annotation Term="SAP__common.Label" String="Changed On"/>
+                <Annotation Term="SAP__common.Heading" String="Chngd On"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Last Changed On"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/EquipmentInstallationTime">
+                <Annotation Term="SAP__common.Label" String="Time"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment usage period time stamp"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/LocationCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/RoomCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/PlantSectionCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/WorkCenterCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/ABCIndicatorCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SortFieldCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/BusinessAreaCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/CostCenterCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/WBSElementCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/StandingOrderCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SettlementOrderCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/MaintPlanningPlantCopyIsReqd">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/MaintWorkCenterCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/CatalogProfileCopyIsRequested">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SalesOrganizationCopyIsReqd">
+                <Annotation Term="SAP__common.Label" String="Indicator"/>
+                <Annotation Term="SAP__common.Heading" String="Flag"/>
+                <Annotation Term="SAP__common.QuickInfo" String="General Flag"/>
+            </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/FieldName">
+                <Annotation Term="SAP__common.Label" String="Field Name"/>
+            </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/OldValue">
+                <Annotation Term="SAP__common.Label" String="New Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="New Content of Changed Field"/>
+            </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/NewValue">
+                <Annotation Term="SAP__common.Label" String="Old Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Old Content of Changed Field"/>
+            </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Comments">
+                <Annotation Term="SAP__common.Label" String="Comments"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Comments"/>
+            </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/EqCondition">
+                <Annotation Term="SAP__common.Label" String="Condition"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Condition"/>
+            </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Equipment">
+                <Annotation Term="SAP__common.Label" String="Equipment"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipment(SAP__self.R_EquipmentTPType)/SuperordinateEquipment">
+                <Annotation Term="SAP__common.Label" String="Superord. Equipment"/>
+                <Annotation Term="SAP__common.Heading" String="Superord.Equipment"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Superordinate Equipment"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipment(SAP__self.R_EquipmentTPType)/EquipInstallationPositionNmbr">
+                <Annotation Term="SAP__common.Label" String="Item (SD)"/>
+                <Annotation Term="SAP__common.Heading" String="Item"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Item number of the SD document"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipment(SAP__self.R_EquipmentTPType)/FunctionalLocation">
+                <Annotation Term="SAP__common.Label" String="Functional Location"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipment(SAP__self.R_EquipmentTPType)/EquipmentInstallationDate">
+                <Annotation Term="SAP__common.Label" String="Changed On"/>
+                <Annotation Term="SAP__common.Heading" String="Chngd On"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Last Changed On"/>
+            </Annotations>
+            <Annotations Target="SAP__self.InstallEquipment(SAP__self.R_EquipmentTPType)/EquipmentInstallationTime">
+                <Annotation Term="SAP__common.Label" String="Time"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment usage period time stamp"/>
             </Annotations>
         </Schema>
     </edmx:DataServices>

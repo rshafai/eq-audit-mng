@@ -1,0 +1,49 @@
+<c:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:c="sap.ui.core"
+>
+
+<Dialog id="editEquipDialog" title="Edit Equipment: {itemCtx>Equipment}-{itemCtx>EquipmentName}">
+  <content>
+    <VBox class="sapUiSmallMargin">
+
+    <Table items="{dlg>/fields}" growing="true" >
+      <columns>
+        <Column><Text text="Field" /></Column>
+        <Column><Text text="Current Value" /></Column>
+        <Column><Text text="New Value" /></Column>
+      </columns>
+      <items>
+        <ColumnListItem>
+          <cells>
+            <Text text="{dlg>label}" />
+            <Text text="{dlg>oldValue}" />
+            <Input
+              value="{dlg>newValue}"
+              showValueHelp="{= !!${dlg>valueHelpEntity} }"
+              valueHelpRequest=".onGenericVH" />
+          </cells>
+        </ColumnListItem>
+      </items>
+    </Table>
+    <Label text="Comments" class="sapUiTinyMarginTop"/>
+    <TextArea value="{itemCtx>Comments}" rows="3" width="100%" />
+    <Label text="Equipment Condition" class="sapUiTinyMarginTop" />
+    <Select 
+        selectedKey="{itemCtx>EqCondition}"
+        items="{
+          path: '/EqConditionVH'
+        }">
+        <c:Item key="{Value}" text="{Text}" />
+      </Select>
+    </VBox>
+  </content>
+  <beginButton>
+    <Button text="Save" press=".onSaveEquipChanges" />
+  </beginButton>
+  <endButton>
+    <Button text="Cancel" press=".onCancelEquipDialog" />
+  </endButton>
+</Dialog>
+
+</c:FragmentDefinition>
