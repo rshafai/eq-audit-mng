@@ -3,7 +3,7 @@
 	xmlns:c="sap.ui.core"
 >
 
-<Dialog id="editEquipDialog" title="Edit Equipment: {itemCtx>Equipment}-{itemCtx>EquipmentName}">
+<Dialog id="editEquipDialog" title="Edit Equipment: {itemCtx>Equipment}-{itemCtx>EquipmentName}" initialFocus="idButtonSave" contentWidth="60%">
   <content>
     <VBox class="sapUiSmallMargin">
 
@@ -11,13 +11,19 @@
       <columns>
         <Column><Text text="Field" /></Column>
         <Column><Text text="Current Value" /></Column>
+        <Column width="30px"></Column>
         <Column><Text text="New Value" /></Column>
       </columns>
       <items>
         <ColumnListItem>
           <cells>
-            <Text text="{dlg>label}" />
-            <Text text="{dlg>oldValue}" />
+            <Label text="{dlg>label}" design="Bold" />
+            <ObjectStatus 
+                    text="{dlg>oldValue}" 
+                    state="{path: 'dlg>oldValue', formatter: '.formatColumns'}" />
+
+            
+            <c:Icon src="sap-icon://restart" color="red" visible="{= ${dlg>oldValue}!==${dlg>newValue} }" press="onRevert"></c:Icon>
             <Input
               value="{dlg>newValue}"
               showValueHelp="{= !!${dlg>valueHelpEntity} }"
@@ -26,23 +32,33 @@
         </ColumnListItem>
       </items>
     </Table>
+    <!-- Item level fields -->
+    <Label text="Equipment Condition" class="sapUiSmallMarginTop" />
+    <Select
+      selectedKey="{
+        path: 'itemCtx>EqCondition',
+        type: 'sap.ui.model.odata.type.String',
+        constraints: { isDigitSequence: true, maxLength: 3 }
+      }"
+      items="{ path: '/EqConditionVH' }">
+      <c:Item
+        key="{
+          path: 'Value',
+          type: 'sap.ui.model.odata.type.String',
+          constraints: { isDigitSequence: true, maxLength: 3 }
+        }"
+        text="{Text} ({Value})" />
+    </Select>
     <Label text="Comments" class="sapUiTinyMarginTop"/>
     <TextArea value="{itemCtx>Comments}" rows="3" width="100%" />
-    <Label text="Equipment Condition" class="sapUiTinyMarginTop" />
-    <Select 
-        selectedKey="{itemCtx>EqCondition}"
-        items="{
-          path: '/EqConditionVH'
-        }">
-        <c:Item key="{Value}" text="{Text}" />
-      </Select>
+      
     </VBox>
   </content>
   <beginButton>
-    <Button text="Save" press=".onSaveEquipChanges" />
+    <Button id="idButtonSave" text="Save" press=".onSaveEquipChanges" type="Emphasized" />
   </beginButton>
   <endButton>
-    <Button text="Cancel" press=".onCancelEquipDialog" />
+    <Button id="idButtonCancel" text="Cancel" press=".onCancelEquipDialog" />
   </endButton>
 </Dialog>
 
