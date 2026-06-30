@@ -22,70 +22,103 @@ sap.ui.define([
              * @memberOf gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt
              */
             onInit: function () {
-            }
+              // Set Supervisor/Auditor mode
+              if (1 === 1){
+                this._SuperMode = true;
+              } else {
+                this._SuperMode = false;
+              }
+              this.getView().setBusyIndicatorDelay(0);
+
+            },
+            routing: {
+              onBeforeNavigation: function (oContext, oNavigationParameters) {
+                // 1. Access row data
+                var oRowData = oContext.getObject();
+                
+                // 2. Insert your custom logic here (e.g., validation, logging, conditional blocking)
+                if (oRowData.Status === "Blocked") {
+                    sap.m.MessageToast.show("Navigation blocked for this record.");
+                    return false; // Prevents the standard object page navigation
+                }
+
+                // Return true or a Promise resolving to true to allow standard navigation to continue
+                return true;
+              }
+
+            } // routing
 
         }, // override
 
 
 //----------------------------------------------------------------------
-// Dynamic Dialog
+// Edit Dialog
 //----------------------------------------------------------------------
 onEditEquipmentValues: function (oEvent, aContexts) {
-    // Fiori Elements automatically passes the selected row context(s)
+  // Fiori Elements automatically passes the selected row context(s)
     if (!aContexts) {
         return;
     }
     if (aContexts.length === 0) {
         MessageToast.show("Please select an item first.");
         return null;
-      }
-      if (aContexts.length > 1) {
+    }
+    if (aContexts.length > 1) {
         MessageToast.show("Please select only one item.");
         return null;
-      }
-    this._oItemContext = aContexts[0];
-    this.editEquipmentValues();
+    }
+    this._openEditDialog(aContexts[0]);
 },
 
-editEquipmentValues: function () {
+_openEditDialog: function (oContext) {
   debugger;
-    const oContext = this._oItemContext;
+    this.getView().setBusy(true);
     const oEquipData = oContext.getObject();
 
     // Fetch existing change rows for this item via the _Change navigation
     const oChangeListBinding = oContext.getModel().bindList("_AuditChanges", oContext);
 
     oChangeListBinding.requestContexts(0, 100).then(aChangeContexts => {
-          const aExistingChanges = aChangeContexts.map(c => c.getObject());
+      const aExistingChanges = aChangeContexts.map(c => c.getObject());
 
-          this._getFieldConfig().then(aFieldConfig => {
-            const aRows = aFieldConfig.map(cfg => {
-              const oExisting = aExistingChanges.find(c => c.FieldName === cfg.FieldName);
-              const sPrefillValue = oExisting ? oExisting.NewValue : oEquipData[cfg.EquipField];
-  
-              return {
-                fieldName: cfg.FieldName,
-                label: cfg.LabelEn,
-                oldValue: oEquipData[cfg.EquipField],     // always master data
-                newValue: sPrefillValue,
-                initialValue: sPrefillValue,  // to check changes later
-                valueHelpEntity: cfg.VhEntity,
-                valueHelpKeyField: cfg.VhKeyField,
-                valueHelpDescField: cfg.VhDescField
-              };
-            });
-      
-            this._oDialogModel = new JSONModel({ fields: aRows });
-            this._loadDialog().then(oDialog => {
-              oDialog.setModel(oContext.getModel(), "itemCtx");
-              //oDialog.getModel("itemCtx").setDefaultBindingMode(sap.ui.model.BindingMode.TwoWay);
-              oDialog.setBindingContext(oContext, "itemCtx");
-              oDialog.setModel(this._oDialogModel, "dlg");
-              oDialog.open();
-            });
-          });
+      this._getFieldConfig().then(aFieldConfig => {
+        const aRows = aFieldConfig.map(cfg => {
+          const oExisting = aExistingChanges.find(c => c.FieldName === cfg.FieldName);
+          const sPrefillValue = oExisting ? oExisting.NewValue : oEquipData[cfg.EquipField];
+
+          return {
+            fieldName: cfg.FieldName,
+            label: cfg.LabelEn,
+            oldValue: oEquipData[cfg.EquipField],     // always master data
+            oldValueText: oEquipData[cfg.EquipFieldText],
+            newValue: sPrefillValue,
+            initialValue: sPrefillValue,  // to check changes later
+            valueHelpEntity: cfg.VhEntity,
+            valueHelpKeyField: cfg.VhKeyField,
+            valueHelpDescField: cfg.VhDescField,
+            approvalMode: this._SuperMode
+          };
         });
+  
+        this._oDialogModel = new JSONModel({ fields: aRows });
+        this._oItemContext = oContext;
+
+        this._oDialogModel = new JSONModel({ fields: aRows });
+        this._loadDialog().then(oDialog => {
+          oDialog.setModel(oContext.getModel(), "itemCtx");
+          oDialog.setBindingContext(oContext, "itemCtx");
+          oDialog.setModel(this._oDialogModel, "dlg");
+          oDialog.open();
+        }).catch(oErr => {
+          MessageBox.error("Could not load equipment data: " + oErr.message);
+        }).finally(() => {
+          this.getView().setBusy(false);
+        });
+      });
+    });
   },
+
+
 
   _loadDialog: function () {
     if (!this._oDialog) {
@@ -154,7 +187,15 @@ editEquipmentValues: function () {
   
 //---- SAVE ---------------------------
 
-onSaveEquipChanges: function () {
+  onSaveAndApprove: function(oEvent){
+    this._saveEquipChanges(true); // pass Approve = true through
+  },
+  
+  onSaveEquipChanges: function () {
+    this._saveEquipChanges(false);
+  },
+
+  _saveEquipChanges: function (bApproveFlag) {
     const aRows = this._oDialogModel.getProperty("/fields");
     const aChangedRows = aRows.filter(r => r.newValue !== r.initialValue);
 
@@ -166,7 +207,7 @@ onSaveEquipChanges: function () {
     const sComments  = oItemContext.getProperty("Comments");
     const sEquipment  = oItemContext.getProperty("Equipment");
   
-    const buildCall = (fieldName, oldValue, newValue) => {
+    const buildCall = (fieldName, oldValue, newValue, bApproveFlag) => {
       const oBinding = oModel.bindContext(
         "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges(...)",
         oItemContext
@@ -177,23 +218,30 @@ onSaveEquipChanges: function () {
       oBinding.setParameter("EqCondition", sCondition || "");
       oBinding.setParameter("Comments", sComments || "");
       oBinding.setParameter("Equipment", sEquipment || "");
+      oBinding.setParameter("Approve", !!bApproveFlag);  // forces any value ("", undefined, "true", 0, etc.) into a genuine boolean 
+
       return oBinding.execute();
     };
   
     let aCalls;
     if (aChangedRows.length > 0) {
-      aCalls = aChangedRows.map(r => buildCall(r.fieldName, r.oldValue, r.newValue));
+      aCalls = aChangedRows.map((r, i) =>
+          buildCall(r.fieldName, r.oldValue, r.newValue, i === 0 ? bApproveFlag : false)
+      );
     } else {
       // no field changes, but still need to push EquipmentCondition/Comments if touched
-      aCalls = [ buildCall("", "", "") ];
+      aCalls = [ buildCall("", "", "", bApproveFlag) ];
     } 
-  
+
+    this._oDialog.setBusy(true);
     Promise.all(aCalls).then(() => {
+      this._oDialog.setBusy(false);
       MessageToast.show("Changes saved.");
       this._oDialog.close();
       this._oItemContext.refresh();
       //this._oItemContext.requestSideEffects(["EqCondition", "Comments", "LastChangedAt", "_Change"]);
     }).catch(oErr => {
+      this._oDialog.setBusy(false);
       MessageBox.error("Save failed: " + oErr.message);
     });
   },
@@ -204,7 +252,6 @@ onSaveEquipChanges: function () {
     }
   },
 
-  
   //--- VH --------------
 
   onGenericVH: function (oEvent) {
@@ -281,9 +328,138 @@ onSaveEquipChanges: function () {
     this._oActiveVHRowContext = null;
   },
 
-
-
-
-//----------------------------------------------------------------------
+  
+//-------------------------------------------------------------------
+// Approve Item
+//-------------------------------------------------------------------
+  onApproveItems: function (oEvent, aContexts) {
+    if (!aContexts) { return; }
+    if (aContexts.length === 0) {
+        MessageToast.show("Please select at least one item.");
+        return null;
+    }
+    if (aContexts.length === 1) {
+      this._openEditDialog(aContexts[0]);
+    } else {
+      this._confirmBulkApprove(aContexts);
+    }
+  },
+  _confirmBulkApprove: function (aContexts) {
+    MessageBox.confirm(
+      `You are about to approve ${aContexts.length} audit items. Click OK to continue or Cancel to go back.`,
+      {
+        title: "Confirm Approval",
+        onClose: (sAction) => {
+          if (sAction === MessageBox.Action.OK) {
+            this._executeBulkApprove(aContexts);
+          }
+        }
+      }
+    );
+  },
+  
+  _executeBulkApprove: function (aContexts) {
+    const oModel = this.getView().getModel();
+  
+    const aCalls = aContexts.map(oCtx => {
+      const oBinding = oModel.bindContext(
+        "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.approveItems(...)",
+        oCtx
+      );
+      return oBinding.execute().then(() => oCtx.requestSideEffects(["AuditItemStatus"]));
     });
+  
+    Promise.all(aCalls).then(() => {
+      MessageToast.show("Items approved.");
+    }).catch(oErr => {
+      MessageBox.error("Approval failed: " + oErr.message);
+    });
+  },
+
+  
+//-------------------------------------------------------------------
+// Barcode Scan
+//-------------------------------------------------------------------
+
+  onBarcodeScan: function (oEvent) {
+    debugger;
+       BarcodeScanner.scan(
+        function (mResult) {
+            console.log("We got a barcode\n" + "Result: " + mResult.text + "\n" + "Format: " + mResult.format + "\n" + "Cancelled: " + mResult.cancelled);
+            this._onScanSuccess(mResult);
+        }.bind(this),
+        function (Error) {
+            MessageBox.error("Scanning failed: " + Error);
+        },
+        function (mParams) {
+            //console.log("Value entered: " + mParams.newValue);
+        },
+        "Scan a barcode or type-in an equipment number to searh for",  //title
+        true,                       //preferFrontCamera
+        30,                         //frameRate
+        1,                          //zoom
+        false,                      //keepCameraScan
+        false                       //disableBarcodeInputDialog
+    );
+  },
+
+  _onScanSuccess: function (mResult) {
+    if (mResult.cancelled) {
+        MessageToast.show("Scan cancelled", { duration: 1000 });
+    } else {
+        var sBarCode = mResult.text;
+        var oExtensionAPI = this.base.getExtensionAPI();
+        var sViewId = this.base.getView().getId();
+        var sTableId = sViewId + "--fe::table::_Items::LineItem";
+        
+        var oTable = sap.ui.getCore().byId(sTableId);
+        if (oTable) {
+            var oBinding = oTable.getRowBinding();
+            if (oBinding) {
+                var aContexts = oBinding.getCurrentContexts();
+                var oMatchedContext = aContexts.find(function (oContext) {
+                    return oContext && oContext.getProperty("Equipment") === sBarCode;
+                });
+                if (oMatchedContext) {
+                    // Success: Located the row in the table
+                    var oData = oMatchedContext.getObject();
+                    sap.m.MessageToast.show("Found Equipment: " + oData.Equipment);
+
+                    // Select/highlight the row, you must access the inner control
+                    var oInnerTable = sap.ui.getCore().byId(sTableId + "-innerTable");
+                    if (oInnerTable && typeof oInnerTable.getItems === "function") {
+                        var aItems = oInnerTable.getItems();
+                        var oRowToSelect = aItems.find(function(oItem) {
+                            return typeof oItem.getBindingContext === "function" && oItem.getBindingContext() === oMatchedContext;
+                        });
+                        if (oRowToSelect) {
+                            // Highlight the left border green
+                            if (typeof oRowToSelect.setHighlight === "function") {
+                                oRowToSelect.setHighlight(sap.ui.core.MessageType.Success); 
+                            }
+                            // Select the checkbox if applicable
+                            if (typeof oInnerTable.setSelectedItem === "function") {
+                                oInnerTable.setSelectedItem(oRowToSelect, true);
+                            }
+                            // Scroll viewport focus to the row
+                            oRowToSelect.focus();
+                        }
+                    }
+                } else {
+                    sap.m.MessageToast.show("Equipment not loaded or not found in this table.");
+                }
+            }
+        } else {
+            console.error("Could not find table with ID: " + sTableId);
+        }
+    }
+
+  },
+
+  
+
+
+
+
+  });
 });

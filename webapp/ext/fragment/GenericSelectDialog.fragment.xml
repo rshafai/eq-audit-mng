@@ -4,5 +4,6 @@
     title="Select Value"
     search=".onGenericVHSearch"
     confirm=".onGenericVHConfirm"
-    cancel=".onGenericVHCancel" />
+    cancel=".onGenericVHCancel"  multiSelect="false"
+    contentWidth="500px" resizable="true"/>
 </core:FragmentDefinition>

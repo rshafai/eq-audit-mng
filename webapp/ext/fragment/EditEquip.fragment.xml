@@ -3,63 +3,105 @@
 	xmlns:c="sap.ui.core"
 >
 
-<Dialog id="editEquipDialog" title="Edit Equipment: {itemCtx>Equipment}-{itemCtx>EquipmentName}" initialFocus="idButtonSave" contentWidth="60%">
+<Dialog id="editEquipDialog" 
+      title="Edit Equipment: {itemCtx>Equipment}-{itemCtx>EquipmentName}" 
+      initialFocus="idButtonSave" 
+      state="None"
+      draggable="true"
+      resizable="true"
+      contentWidth="50%">
+      <customHeader>
+        <Bar>
+            <contentLeft>
+              <Text text="Edit Equipment" />
+                <!-- Add optional icon or back button here -->
+            </contentLeft>
+            <contentMiddle>
+                
+            </contentMiddle>
+            <contentRight>
+                <Button icon="sap-icon://decline" press="onCancelEquipDialog"/>
+            </contentRight>
+        </Bar>
+    </customHeader>
   <content>
     <VBox class="sapUiSmallMargin">
 
-    <Table items="{dlg>/fields}" growing="true" >
-      <columns>
-        <Column><Text text="Field" /></Column>
-        <Column><Text text="Current Value" /></Column>
-        <Column width="30px"></Column>
-        <Column><Text text="New Value" /></Column>
-      </columns>
-      <items>
-        <ColumnListItem>
-          <cells>
-            <Label text="{dlg>label}" design="Bold" />
-            <ObjectStatus 
-                    text="{dlg>oldValue}" 
-                    state="{path: 'dlg>oldValue', formatter: '.formatColumns'}" />
+      <HBox >
+        <VBox class="sapUiMediumMarginEnd">
+          <Label text="Audit Item #"></Label>
+          <Title text="{itemCtx>AuditDocId}-{itemCtx>ItemNumber}" level="H2" />
+        </VBox>
+        <VBox class="sapUiMediumMarginEnd">
+          <Label text="Audit Item Status"></Label>
+          <Title text="{itemCtx>AuditItemStatusText}" level="H2" />
+        </VBox>
+        <VBox class="sapUiMediumMarginEnd">
+          <Label text="Equipment"></Label>
+          <Title text="{itemCtx>Equipment} - {itemCtx>EquipmentName}" level="H2" />
+        </VBox>
+      </HBox>
 
-            
-            <c:Icon src="sap-icon://restart" color="red" visible="{= ${dlg>oldValue}!==${dlg>newValue} }" press="onRevert"></c:Icon>
-            <Input
-              value="{dlg>newValue}"
-              showValueHelp="{= !!${dlg>valueHelpEntity} }"
-              valueHelpRequest=".onGenericVH" />
-          </cells>
-        </ColumnListItem>
-      </items>
-    </Table>
-    <!-- Item level fields -->
-    <Label text="Equipment Condition" class="sapUiSmallMarginTop" />
-    <Select
-      selectedKey="{
-        path: 'itemCtx>EqCondition',
-        type: 'sap.ui.model.odata.type.String',
-        constraints: { isDigitSequence: true, maxLength: 3 }
-      }"
-      items="{ path: '/EqConditionVH' }">
-      <c:Item
-        key="{
-          path: 'Value',
-          type: 'sap.ui.model.odata.type.String',
-          constraints: { isDigitSequence: true, maxLength: 3 }
-        }"
-        text="{Text} ({Value})" />
-    </Select>
-    <Label text="Comments" class="sapUiTinyMarginTop"/>
-    <TextArea value="{itemCtx>Comments}" rows="3" width="100%" />
-      
+
+<!-- Item level fields -->
+      <!-- <HBox width="100%">
+        <VBox class="sapUiMediumMarginEnd"> -->
+          <Label text="Equipment Condition" class="sapUiSmallMarginTop" />
+          <Select
+            selectedKey="{
+              path: 'itemCtx>EqCondition',
+              type: 'sap.ui.model.odata.type.String',
+              constraints: { isDigitSequence: true, maxLength: 3 }
+            }"
+            items="{ path: '/EqConditionVH' }">
+            <c:Item
+              key="{
+                path: 'Value',
+                type: 'sap.ui.model.odata.type.String',
+                constraints: { isDigitSequence: true, maxLength: 3 }
+              }"
+              text="{Text} ({Value})" />
+          </Select>
+        <!-- </VBox> 
+        <VBox width="100%">  -->
+          <Label text="Auditor's Comments" class="sapUiTinyMarginTop"/>
+          <TextArea value="{itemCtx>Comments}" rows="3" width="100%" />
+        <!-- </VBox>     
+      </HBox>  -->
+
+      <Table items="{dlg>/fields}" growing="true" class="sapUiSmallMarginBottom sapUiSmallMarginTop">
+        <columns>
+          <Column><Text text="Field" /></Column>
+          <Column><Text text="Current Value" /></Column>
+          <Column width="30px"></Column>
+          <Column><Text text="New Value" /></Column>
+        </columns>
+        <items >
+          <ColumnListItem>
+            <cells>
+              <Label text="{dlg>label}" design="Bold" />
+              <ObjectStatus 
+                      text="{dlg>oldValue} - {dlg>oldValueText}" 
+                      state="{path: 'dlg>oldValue', formatter: '.formatColumns'}" />
+
+              
+              <c:Icon src="sap-icon://restart" color="red" visible="{= ${dlg>oldValue}!==${dlg>newValue} }" press="onRevert"></c:Icon>
+              <Input
+                value="{dlg>newValue}"
+                showValueHelp="{= !!${dlg>valueHelpEntity} }"
+                valueHelpRequest=".onGenericVH" />
+            </cells>
+          </ColumnListItem>
+        </items>
+      </Table>
+    
     </VBox>
   </content>
-  <beginButton>
+  <buttons>
     <Button id="idButtonSave" text="Save" press=".onSaveEquipChanges" type="Emphasized" />
-  </beginButton>
-  <endButton>
+    <Button id="idButtonApprove" text="Save &amp; Approve" press=".onSaveAndApprove" type="Success" visible="{dlg>/approvalMode}" />
     <Button id="idButtonCancel" text="Cancel" press=".onCancelEquipDialog" />
-  </endButton>
+  </buttons>
 </Dialog>
 
 </c:FragmentDefinition>

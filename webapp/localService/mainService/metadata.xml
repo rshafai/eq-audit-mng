@@ -117,15 +117,11 @@
                 <Property Name="ItemNumber" Type="Edm.String" Nullable="false" MaxLength="5"/>
                 <Property Name="FieldName" Type="Edm.String" Nullable="false" MaxLength="30"/>
                 <Property Name="FieldDescription" Type="Edm.String" Nullable="false" MaxLength="100"/>
-                <Property Name="ValueNew" Type="Edm.String" Nullable="false" MaxLength="254"/>
-                <Property Name="ValueOld" Type="Edm.String" Nullable="false" MaxLength="254"/>
+                <Property Name="NewValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
+                <Property Name="OldValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
                 <Property Name="Equipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
-                <Property Name="ChangeId" Type="Edm.Guid"/>
                 <Property Name="CreatedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
                 <Property Name="CreatedAt" Type="Edm.DateTimeOffset"/>
-                <Property Name="LastChangedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
-                <Property Name="LastChangedAt" Type="Edm.DateTimeOffset"/>
-                <Property Name="LocalLastChangedAt" Type="Edm.DateTimeOffset"/>
                 <Property Name="__EntityControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EntityControl"/>
                 <Property Name="SAP__Messages" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.SAP__Message)" Nullable="false"/>
                 <NavigationProperty Name="_AuditHeader" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_HeaderType" Nullable="false">
@@ -165,7 +161,8 @@
                 <Property Name="AuditItemStatusText" Type="Edm.String" Nullable="false" MaxLength="60"/>
                 <Property Name="AuditItemStatusCriticality" Type="Edm.Byte" Nullable="false"/>
                 <Property Name="Comments" Type="Edm.String" Nullable="false"/>
-                <Property Name="EqCondition" Type="Edm.String" Nullable="false"/>
+                <Property Name="EqCondition" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="EqConditionText" Type="Edm.String" Nullable="false" MaxLength="60"/>
                 <Property Name="AuditedAt" Type="Edm.DateTimeOffset"/>
                 <Property Name="AuditedBy" Type="Edm.String" Nullable="false" MaxLength="12"/>
                 <Property Name="AuditorName" Type="Edm.String" Nullable="false" MaxLength="80"/>
@@ -184,6 +181,8 @@
                 <Property Name="FunctionalLocation" Type="Edm.String" Nullable="false" MaxLength="30"/>
                 <Property Name="ManufacturerSerialNumber" Type="Edm.String" Nullable="false" MaxLength="30"/>
                 <Property Name="AssetManufacturerName" Type="Edm.String" Nullable="false" MaxLength="30"/>
+                <Property Name="ManufacturerCountry" Type="Edm.String" Nullable="false" MaxLength="3"/>
+                <Property Name="EquipmentManufacturerPrtNmbr" Type="Edm.String" Nullable="false" MaxLength="30"/>
                 <Property Name="__EntityControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EntityControl"/>
                 <Property Name="__OperationControl" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsOperationControl"/>
                 <Property Name="SAP__Messages" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.SAP__Message)" Nullable="false"/>
@@ -193,6 +192,7 @@
                 <NavigationProperty Name="_AuditHeader" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_HeaderType" Nullable="false" Partner="_AuditItems">
                     <ReferentialConstraint Property="AuditDocId" ReferencedProperty="AuditDocId"/>
                 </NavigationProperty>
+                <NavigationProperty Name="_Condition" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EqConditionVHType"/>
                 <NavigationProperty Name="_Equipment" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType"/>
             </EntityType>
             <EntityType Name="ZQMM_C_Audit_HeaderType">
@@ -225,6 +225,14 @@
                 <NavigationProperty Name="_AuditItems" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType)" Partner="_AuditHeader">
                     <OnDelete Action="Cascade"/>
                 </NavigationProperty>
+            </EntityType>
+            <EntityType Name="EqConditionVHType">
+                <Key>
+                    <PropertyRef Name="Value"/>
+                </Key>
+                <Property Name="Value" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="Text" Type="Edm.String" Nullable="false" MaxLength="60"/>
+                <Property Name="ConditionCriticality" Type="Edm.Byte" Nullable="false"/>
             </EntityType>
             <EntityType Name="ZQMM_I_FLoc_VHType">
                 <Key>
@@ -459,7 +467,7 @@
                 <Property Name="_AuditItems" Type="Edm.Boolean" Nullable="false"/>
             </ComplexType>
             <ComplexType Name="ZQMM_C_Audit_ItemsOperationControl">
-                <Property Name="ApproveItem" Type="Edm.Boolean" Nullable="false"/>
+                <Property Name="approveItems" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="logEquipmentChanges" Type="Edm.Boolean" Nullable="false"/>
                 <Property Name="saveEquipmentChanges" Type="Edm.Boolean" Nullable="false"/>
             </ComplexType>
@@ -490,10 +498,6 @@
                 <Property Name="numericSeverity" Type="Edm.Byte" Nullable="false"/>
                 <Property Name="longtextUrl" Type="Edm.String"/>
             </ComplexType>
-            <Action Name="ApproveItem" EntitySetPath="_it" IsBound="true">
-                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
-                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
-            </Action>
             <Action Name="DismantleEquipment" EntitySetPath="_it" IsBound="true">
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
                 <Parameter Name="SuperordinateEquipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
@@ -548,10 +552,6 @@
             <Action Name="RsetEquipFromMarkedForDeletion" IsBound="true">
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
             </Action>
-            <Action Name="EditItem" EntitySetPath="_it" IsBound="true">
-                <Parameter Name="_it" Type="Collection(com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType)" Nullable="false"/>
-                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
-            </Action>
             <Action Name="SetEquipToMarkedForDeletion" IsBound="true">
                 <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType" Nullable="false"/>
             </Action>
@@ -560,9 +560,10 @@
                 <Parameter Name="FieldName" Type="Edm.String" Nullable="false" MaxLength="30"/>
                 <Parameter Name="OldValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
                 <Parameter Name="NewValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
+                <Parameter Name="EqCondition" Type="Edm.String" Nullable="false" MaxLength="3"/>
                 <Parameter Name="Comments" Type="Edm.String" Nullable="false"/>
-                <Parameter Name="EqCondition" Type="Edm.String" Nullable="false"/>
                 <Parameter Name="Equipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Parameter Name="Approve" Type="Edm.Boolean" Nullable="false"/>
                 <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
             </Action>
             <Action Name="DismantleEquipWithDataTransfer" EntitySetPath="_it" IsBound="true">
@@ -594,9 +595,14 @@
                 <Parameter Name="FieldName" Type="Edm.String" Nullable="false" MaxLength="30"/>
                 <Parameter Name="OldValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
                 <Parameter Name="NewValue" Type="Edm.String" Nullable="false" MaxLength="254"/>
+                <Parameter Name="EqCondition" Type="Edm.String" Nullable="false" MaxLength="3"/>
                 <Parameter Name="Comments" Type="Edm.String" Nullable="false"/>
-                <Parameter Name="EqCondition" Type="Edm.String" Nullable="false"/>
                 <Parameter Name="Equipment" Type="Edm.String" Nullable="false" MaxLength="18"/>
+                <Parameter Name="Approve" Type="Edm.Boolean" Nullable="false"/>
+                <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
+            </Action>
+            <Action Name="approveItems" EntitySetPath="_it" IsBound="true">
+                <Parameter Name="_it" Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
                 <ReturnType Type="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType" Nullable="false"/>
             </Action>
             <Action Name="InstallEquipment" EntitySetPath="_it" IsBound="true">
@@ -613,6 +619,7 @@
             </Action>
             <EntityContainer Name="Container">
                 <EntitySet Name="AuditFieldConfig" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.AuditFieldConfigType"/>
+                <EntitySet Name="EqConditionVH" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.EqConditionVHType"/>
                 <EntitySet Name="I_Equipment" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.I_EquipmentType"/>
                 <EntitySet Name="I_PlantStdVH" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.I_PlantStdVHType"/>
                 <EntitySet Name="R_EquipmentTP" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.R_EquipmentTPType"/>
@@ -627,6 +634,7 @@
                 <EntitySet Name="ZQMM_C_Audit_Items" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_C_Audit_ItemsType">
                     <NavigationPropertyBinding Path="_AuditChanges" Target="ZQMM_C_Audit_Change"/>
                     <NavigationPropertyBinding Path="_AuditHeader" Target="ZQMM_C_Audit_Header"/>
+                    <NavigationPropertyBinding Path="_Condition" Target="EqConditionVH"/>
                     <NavigationPropertyBinding Path="_Equipment" Target="R_EquipmentTP"/>
                 </EntitySet>
                 <EntitySet Name="ZQMM_I_CostCenter_VH" EntityType="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.ZQMM_I_CostCenter_VHType"/>
@@ -1033,13 +1041,12 @@
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Field Name"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/ValueNew">
-                <Annotation Term="SAP__core.Computed"/>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/NewValue">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="New Value"/>
                 <Annotation Term="SAP__common.QuickInfo" String="New Content of Changed Field"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/ValueOld">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/OldValue">
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Old Value"/>
@@ -1053,20 +1060,9 @@
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Number"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/CreatedBy">
-                <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Created By"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Created By User"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/CreatedAt">
-                <Annotation Term="SAP__core.Computed"/>
-                <Annotation Term="SAP__common.Label" String="Time Stamp"/>
-                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/LastChangedBy">
-                <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__common.Label" String="Changed By"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Last Changed By User"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/__EntityControl">
                 <Annotation Term="SAP__core.Computed"/>
@@ -1153,18 +1149,10 @@
                             <PropertyValue Property="Value" Path="FieldName"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Value" Path="ValueNew"/>
+                            <PropertyValue Property="Value" Path="NewValue"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Value" Path="ValueOld"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Changed By"/>
-                            <PropertyValue Property="Value" Path="LastChangedBy"/>
-                        </Record>
-                        <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Changed At"/>
-                            <PropertyValue Property="Value" Path="LastChangedAt"/>
+                            <PropertyValue Property="Value" Path="OldValue"/>
                         </Record>
                     </Collection>
                 </Annotation>
@@ -1295,28 +1283,32 @@
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__UI.Hidden"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AuditedAt">
-                <Annotation Term="SAP__common.Label" String="Audited At"/>
-                <Annotation Term="SAP__common.Heading" String="Time Stamp"/>
-                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/EqCondition">
+                <Annotation Term="SAP__common.Text" Path="EqConditionText"/>
+                <Annotation Term="SAP__common.IsDigitSequence"/>
+                <Annotation Term="SAP__common.Label" String="Condition"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Condition"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AuditedBy">
-                <Annotation Term="SAP__common.Label" String="Audited By"/>
                 <Annotation Term="SAP__common.Text" Path="AuditorName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__common.Heading" String="User Name"/>
-                <Annotation Term="SAP__common.QuickInfo" String="User Name"/>
+                <Annotation Term="SAP__common.Label" String="User Name"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/ApprovedBy">
                 <Annotation Term="SAP__common.Text" Path="ApprovedByName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="User Name"/>
             </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/CreatedAt">
+                <Annotation Term="SAP__common.Label" String="Created At"/>
+                <Annotation Term="SAP__common.Heading" String="Time Stamp"/>
+                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
+            </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/CreatedBy">
+                <Annotation Term="SAP__common.Label" String="Created By"/>
                 <Annotation Term="SAP__common.Text" Path="AuditorName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Created By"/>
+                <Annotation Term="SAP__common.Heading" String="Created By"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Created By User"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/LastChangedBy">
@@ -1357,6 +1349,18 @@
                 <Annotation Term="SAP__common.Heading" String="Manufacturer's Serial Number"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Manufacturer's Serial Number"/>
             </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/ManufacturerCountry">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Mfr Ctry/Reg"/>
+                <Annotation Term="SAP__common.Heading" String="M C/R"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Country/Region of Manufacture"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/EquipmentManufacturerPrtNmbr">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="ManufactPartNo."/>
+                <Annotation Term="SAP__common.Heading" String="Manufacturer part number"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Manufacturer part number"/>
+            </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__EntityControl">
                 <Annotation Term="SAP__core.Computed"/>
                 <Annotation Term="SAP__UI.HiddenFilter"/>
@@ -1392,6 +1396,14 @@
                                     </PropertyValue>
                                 </Record>
                                 <Record>
+                                    <PropertyValue Property="NavigationProperty" NavigationPropertyPath="_Condition"/>
+                                    <PropertyValue Property="InsertRestrictions">
+                                        <Record>
+                                            <PropertyValue Property="Insertable" Bool="false"/>
+                                        </Record>
+                                    </PropertyValue>
+                                </Record>
+                                <Record>
                                     <PropertyValue Property="NavigationProperty" NavigationPropertyPath="_Equipment"/>
                                     <PropertyValue Property="InsertRestrictions">
                                         <Record>
@@ -1417,10 +1429,6 @@
                                     <PropertyValue Property="Property" PropertyPath="Comments"/>
                                     <PropertyValue Property="AllowedExpressions" String="SearchExpression"/>
                                 </Record>
-                                <Record>
-                                    <PropertyValue Property="Property" PropertyPath="EqCondition"/>
-                                    <PropertyValue Property="AllowedExpressions" String="SearchExpression"/>
-                                </Record>
                             </Collection>
                         </PropertyValue>
                         <PropertyValue Property="NonFilterableProperties">
@@ -1436,7 +1444,6 @@
                         <PropertyValue Property="NonSortableProperties">
                             <Collection>
                                 <PropertyPath>Comments</PropertyPath>
-                                <PropertyPath>EqCondition</PropertyPath>
                                 <PropertyPath>__EntityControl</PropertyPath>
                                 <PropertyPath>__OperationControl</PropertyPath>
                             </Collection>
@@ -1467,14 +1474,14 @@
                     <Collection/>
                 </Annotation>
             </Annotations>
-            <Annotations Target="SAP__self.ApproveItem(SAP__self.ZQMM_C_Audit_ItemsType)">
-                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/ApproveItem"/>
-            </Annotations>
             <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)">
                 <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/logEquipmentChanges"/>
             </Annotations>
             <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)">
                 <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/saveEquipmentChanges"/>
+            </Annotations>
+            <Annotations Target="SAP__self.approveItems(SAP__self.ZQMM_C_Audit_ItemsType)">
+                <Annotation Term="SAP__core.OperationAvailable" Path="_it/__OperationControl/approveItems"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType">
                 <Annotation Term="SAP__common.Label" String="Equipment Audit Items - Projection"/>
@@ -1488,8 +1495,8 @@
                 </Annotation>
                 <Annotation Term="SAP__UI.DataPoint" Qualifier="dpDate">
                     <Record>
-                        <PropertyValue Property="Value" Path="AuditedAt"/>
-                        <PropertyValue Property="Title" String="Verified At"/>
+                        <PropertyValue Property="Value" Path="CreatedAt"/>
+                        <PropertyValue Property="Title" String="Created At"/>
                     </Record>
                 </Annotation>
                 <Annotation Term="SAP__UI.DataPoint" Qualifier="dpHeaderEquip">
@@ -1499,6 +1506,20 @@
                         <PropertyValue Property="CriticalityRepresentation" EnumMember="SAP__UI.CriticalityRepresentationType/WithoutIcon"/>
                         <PropertyValue Property="CriticalityValue" EnumMember="SAP__UI.CriticalityType/Positive"/>
                     </Record>
+                </Annotation>
+                <Annotation Term="SAP__UI.Facets">
+                    <Collection>
+                        <Record Type="SAP__UI.ReferenceFacet">
+                            <PropertyValue Property="Label" String="Audit Item Information"/>
+                            <PropertyValue Property="ID" String="idBasicInfo"/>
+                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.Identification"/>
+                        </Record>
+                        <Record Type="SAP__UI.ReferenceFacet">
+                            <PropertyValue Property="Label" String="Changes Made During Audit"/>
+                            <PropertyValue Property="ID" String="idChangeTable"/>
+                            <PropertyValue Property="Target" AnnotationPath="_AuditChanges/@SAP__UI.LineItem"/>
+                        </Record>
+                    </Collection>
                 </Annotation>
                 <Annotation Term="SAP__UI.HeaderFacets">
                     <Collection>
@@ -1516,20 +1537,6 @@
                         <Record Type="SAP__UI.ReferenceFacet">
                             <PropertyValue Property="ID" String="idHeadAcDate"/>
                             <PropertyValue Property="Target" AnnotationPath="@SAP__UI.DataPoint#dpDate"/>
-                        </Record>
-                    </Collection>
-                </Annotation>
-                <Annotation Term="SAP__UI.Facets">
-                    <Collection>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Audit Item Information"/>
-                            <PropertyValue Property="ID" String="idBasicInfo"/>
-                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.Identification"/>
-                        </Record>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Label" String="Changes Made During Audit"/>
-                            <PropertyValue Property="ID" String="idChangeTable"/>
-                            <PropertyValue Property="Target" AnnotationPath="_AuditChanges/@SAP__UI.LineItem"/>
                         </Record>
                     </Collection>
                 </Annotation>
@@ -1585,12 +1592,12 @@
                             <PropertyValue Property="Value" Path="AuditItemStatus"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Auditor"/>
-                            <PropertyValue Property="Value" Path="AuditedBy"/>
+                            <PropertyValue Property="Label" String="Created By"/>
+                            <PropertyValue Property="Value" Path="CreatedBy"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Label" String="Audited At"/>
-                            <PropertyValue Property="Value" Path="AuditedAt"/>
+                            <PropertyValue Property="Label" String="Created At"/>
+                            <PropertyValue Property="Value" Path="CreatedAt"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Label" String="Comments"/>
@@ -1611,16 +1618,21 @@
                             <PropertyValue Property="Value" Path="ItemNumber"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Value" Path="EqConditionText"/>
+                        </Record>
+                        <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Value" Path="Equipment"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Criticality" Path="AuditItemStatusCriticality"/>
+                            <PropertyValue Property="CriticalityRepresentation" EnumMember="SAP__UI.CriticalityRepresentationType/WithoutIcon"/>
                             <PropertyValue Property="Value" Path="AuditItemStatus"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Value" Path="AuditedBy"/>
+                            <PropertyValue Property="Value" Path="CreatedBy"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
-                            <PropertyValue Property="Value" Path="AuditedAt"/>
+                            <PropertyValue Property="Value" Path="CreatedAt"/>
                         </Record>
                         <Record Type="SAP__UI.DataField">
                             <PropertyValue Property="Value" Path="Comments"/>
@@ -1877,17 +1889,6 @@
                         <PropertyValue Property="CriticalityRepresentation" EnumMember="SAP__UI.CriticalityRepresentationType/WithoutIcon"/>
                     </Record>
                 </Annotation>
-                <Annotation Term="SAP__UI.HeaderFacets">
-                    <Collection>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#fgHeader"/>
-                        </Record>
-                        <Record Type="SAP__UI.ReferenceFacet">
-                            <PropertyValue Property="ID" String="idHeadStatus"/>
-                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.DataPoint#dpStatus"/>
-                        </Record>
-                    </Collection>
-                </Annotation>
                 <Annotation Term="SAP__UI.Facets">
                     <Collection>
                         <Record Type="SAP__UI.ReferenceFacet">
@@ -1899,6 +1900,17 @@
                             <PropertyValue Property="Label" String="Items"/>
                             <PropertyValue Property="ID" String="idItemTable"/>
                             <PropertyValue Property="Target" AnnotationPath="_AuditItems/@SAP__UI.PresentationVariant"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+                <Annotation Term="SAP__UI.HeaderFacets">
+                    <Collection>
+                        <Record Type="SAP__UI.ReferenceFacet">
+                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.FieldGroup#fgHeader"/>
+                        </Record>
+                        <Record Type="SAP__UI.ReferenceFacet">
+                            <PropertyValue Property="ID" String="idHeadStatus"/>
+                            <PropertyValue Property="Target" AnnotationPath="@SAP__UI.DataPoint#dpStatus"/>
                         </Record>
                     </Collection>
                 </Annotation>
@@ -2049,6 +2061,55 @@
                     <Record/>
                 </Annotation>
                 <Annotation Term="SAP__common.Messages" Path="SAP__Messages"/>
+            </Annotations>
+            <Annotations Target="SAP__self.EqConditionVHType/Value">
+                <Annotation Term="SAP__common.IsUpperCase"/>
+                <Annotation Term="SAP__common.Label" String="Lower Value"/>
+                <Annotation Term="SAP__common.Heading" String="Fixed"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Values for Domains: Single Value/Lower Limit"/>
+            </Annotations>
+            <Annotations Target="SAP__self.EqConditionVHType">
+                <Annotation Term="SAP__common.Label" String="Equipment Conditions VH"/>
+                <Annotation Term="SAP__UI.LineItem">
+                    <Collection>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Value" Path="Value"/>
+                        </Record>
+                        <Record Type="SAP__UI.DataField">
+                            <PropertyValue Property="Value" Path="Text"/>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="SAP__self.Container/EqConditionVH">
+                <Annotation Term="SAP__capabilities.SearchRestrictions">
+                    <Record>
+                        <PropertyValue Property="Searchable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.InsertRestrictions">
+                    <Record>
+                        <PropertyValue Property="Insertable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.DeleteRestrictions">
+                    <Record>
+                        <PropertyValue Property="Deletable" Bool="false"/>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__capabilities.UpdateRestrictions">
+                    <Record>
+                        <PropertyValue Property="Updatable" Bool="false"/>
+                        <PropertyValue Property="QueryOptions">
+                            <Record>
+                                <PropertyValue Property="SelectSupported" Bool="true"/>
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+                <Annotation Term="SAP__core.OptimisticConcurrency">
+                    <Collection/>
+                </Annotation>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_I_FLoc_VHType/FunctionalLocation">
                 <Annotation Term="SAP__common.IsUpperCase"/>
@@ -3278,6 +3339,9 @@
                 <Annotation Term="SAP__common.Label" String="Time"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Time of Change"/>
             </Annotations>
+            <Annotations Target="SAP__self.EqConditionVHType/ConditionCriticality">
+                <Annotation Term="SAP__UI.Hidden"/>
+            </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_HeaderType/MaintPlantName">
                 <Annotation Term="SAP__UI.Hidden"/>
                 <Annotation Term="SAP__common.Label" String="Plant Name"/>
@@ -3306,11 +3370,6 @@
                 <Annotation Term="SAP__UI.Hidden"/>
                 <Annotation Term="SAP__common.Label" String="Short Description"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Short Text for Fixed Values"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/CreatedAt">
-                <Annotation Term="SAP__UI.Hidden"/>
-                <Annotation Term="SAP__common.Label" String="Time Stamp"/>
-                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/LastChangedAt">
                 <Annotation Term="SAP__UI.Hidden"/>
@@ -3400,16 +3459,7 @@
                 <Annotation Term="SAP__common.Heading" String="End-of-Use"/>
                 <Annotation Term="SAP__common.QuickInfo" String="End-of-Use Date of the Technical Object"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/ChangeId">
-                <Annotation Term="SAP__common.Label" String="UUID"/>
-                <Annotation Term="SAP__common.Heading" String="Unique universal identifier"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Global Unique ID for table"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/LastChangedAt">
-                <Annotation Term="SAP__common.Label" String="Time Stamp"/>
-                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
-            </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/LocalLastChangedAt">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ChangeType/CreatedAt">
                 <Annotation Term="SAP__common.Label" String="Time Stamp"/>
                 <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
             </Annotations>
@@ -3427,9 +3477,13 @@
                 <Annotation Term="SAP__common.Label" String="Comments"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Comments"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/EqCondition">
-                <Annotation Term="SAP__common.Label" String="Condition"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Condition"/>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/EqConditionText">
+                <Annotation Term="SAP__common.Label" String="Short Description"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Short Text for Fixed Values"/>
+            </Annotations>
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AuditedAt">
+                <Annotation Term="SAP__common.Label" String="Time Stamp"/>
+                <Annotation Term="SAP__common.QuickInfo" String="UTC Time Stamp in Short Form (YYYYMMDDhhmmss)"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/AuditorName">
                 <Annotation Term="SAP__common.Label" String="Full Name"/>
@@ -3458,7 +3512,7 @@
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__OperationControl/ApproveItem">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType/__OperationControl/approveItems">
                 <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
@@ -3500,6 +3554,10 @@
                 <Annotation Term="SAP__common.Label" String="Dyn. Method Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Method Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Method Property"/>
+            </Annotations>
+            <Annotations Target="SAP__self.EqConditionVHType/Text">
+                <Annotation Term="SAP__common.Label" String="Short Description"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Short Text for Fixed Values"/>
             </Annotations>
             <Annotations Target="SAP__self.ZQMM_I_FLoc_VHType/FunctionalLocationName">
                 <Annotation Term="SAP__common.Label" String="FunctLocDescrip."/>
@@ -3736,7 +3794,7 @@
                 <Annotation Term="SAP__common.Heading" String="Dynamic Create by Association Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Create via Association Control Property"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsOperationControl/ApproveItem">
+            <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsOperationControl/approveItems">
                 <Annotation Term="SAP__common.Label" String="Dyn. Action Control"/>
                 <Annotation Term="SAP__common.Heading" String="Dynamic Action Control"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Dynamic Action Property"/>
@@ -3941,17 +3999,21 @@
                 <Annotation Term="SAP__common.Label" String="Old Value"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Old Content of Changed Field"/>
             </Annotations>
-            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Comments">
-                <Annotation Term="SAP__common.Label" String="Comments"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Comments"/>
-            </Annotations>
             <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/EqCondition">
                 <Annotation Term="SAP__common.Label" String="Condition"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Condition"/>
             </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Comments">
+                <Annotation Term="SAP__common.Label" String="Comments"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Comments"/>
+            </Annotations>
             <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Equipment">
                 <Annotation Term="SAP__common.Label" String="Equipment"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.logEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Approve">
+                <Annotation Term="SAP__common.Label" String="Truth Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Truth Value: True/False"/>
             </Annotations>
             <Annotations Target="SAP__self.DismantleEquipWithDataTransfer(SAP__self.R_EquipmentTPType)/SuperordinateEquipment">
                 <Annotation Term="SAP__common.Label" String="Superord. Equipment"/>
@@ -4061,17 +4123,21 @@
                 <Annotation Term="SAP__common.Label" String="Old Value"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Old Content of Changed Field"/>
             </Annotations>
-            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Comments">
-                <Annotation Term="SAP__common.Label" String="Comments"/>
-                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Comments"/>
-            </Annotations>
             <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/EqCondition">
                 <Annotation Term="SAP__common.Label" String="Condition"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Condition"/>
             </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Comments">
+                <Annotation Term="SAP__common.Label" String="Comments"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Equipment Audit Comments"/>
+            </Annotations>
             <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Equipment">
                 <Annotation Term="SAP__common.Label" String="Equipment"/>
                 <Annotation Term="SAP__common.QuickInfo" String="Equipment Number"/>
+            </Annotations>
+            <Annotations Target="SAP__self.saveEquipmentChanges(SAP__self.ZQMM_C_Audit_ItemsType)/Approve">
+                <Annotation Term="SAP__common.Label" String="Truth Value"/>
+                <Annotation Term="SAP__common.QuickInfo" String="Truth Value: True/False"/>
             </Annotations>
             <Annotations Target="SAP__self.InstallEquipment(SAP__self.R_EquipmentTPType)/SuperordinateEquipment">
                 <Annotation Term="SAP__common.Label" String="Superord. Equipment"/>
