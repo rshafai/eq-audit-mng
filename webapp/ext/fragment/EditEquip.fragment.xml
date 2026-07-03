@@ -17,6 +17,7 @@
                 <!-- Add optional icon or back button here -->
             </contentLeft>
             <contentMiddle>
+              <Text text="{itemCtx>isEditable}"></Text>
                 
             </contentMiddle>
             <contentRight>

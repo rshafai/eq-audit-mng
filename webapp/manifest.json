@@ -169,14 +169,14 @@
                       "text": "Edit Item",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onEditEquipmentValues",
                       "visible": true,
-                      "enabled": true
+                      "enabled": "{= ${isEditable} === true }"
                     },
                     "ApproveItem": {
                       "id": "ApproveItem",
                       "requiresSelection": true,
                       "text": "Approve Items",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onApproveItems",
-                      "visible": true,
+                      "visible": "{= ${isEditable} === true }",
                       "enabled": true
                     },
                     "BarcodeScan": {

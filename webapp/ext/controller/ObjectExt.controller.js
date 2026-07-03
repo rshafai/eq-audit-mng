@@ -33,23 +33,46 @@ sap.ui.define([
             },
             routing: {
               onBeforeNavigation: function (oContext, oNavigationParameters) {
-                // 1. Access row data
                 var oRowData = oContext.getObject();
-                
-                // 2. Insert your custom logic here (e.g., validation, logging, conditional blocking)
                 if (oRowData.Status === "Blocked") {
                     sap.m.MessageToast.show("Navigation blocked for this record.");
                     return false; // Prevents the standard object page navigation
                 }
-
-                // Return true or a Promise resolving to true to allow standard navigation to continue
                 return true;
-              }
+              },
+              onAfterBinding: function () {
+                const oExtensionAPI = this.base.getExtensionAPI();
+                const sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem";
+                                 //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
+                this._oItemTable = this.base.byId(sTableId);
+                
+                if (this._oItemTable) {
+                  this._oItemTable.attachSelectionChange(this.onTableSelectionChange, this);
+                }
+            }
+
 
             } // routing
 
         }, // override
 
+
+  onTableSelectionChange: function (oEvent) {
+      const aSelectedContexts = this.base.getExtensionAPI().getSelectedContexts(oEvent.getParameter("id"));
+      let isEditVisible = false;
+      let isApproveVisible = false;
+
+      if (aSelectedContexts.length === 1) {
+          const oSelectedData = aSelectedContexts[0].getObject(); 
+          var sColumnValue = oSelectedData.YourColumnName;
+
+          // Execute your custom visibility logic here
+          var oUiModel = this.getView().getModel("ui");
+          oUiModel.setProperty("/isEditActionVisible", sColumnValue === "A");
+      }
+      this.getView().getModel("ui").setProperty("/isEditVisible", isEditVisible);
+      this.getView().getModel("ui").setProperty("/isApproveVisible", isApproveVisible);
+  },
 
 //----------------------------------------------------------------------
 // Edit Dialog
@@ -147,28 +170,6 @@ _openEditDialog: function (oContext) {
       });
   },
 
-  _getSelectedItemContext: function () {
-    const oTable = this._getItemsTable();
-    if (!oTable) { return null; }
-  
-    const aSelectedContexts = oTable.getSelectedContexts();
-  
-    if (aSelectedContexts.length === 0) {
-      MessageToast.show("Please select an item first.");
-      return null;
-    }
-    if (aSelectedContexts.length > 1) {
-      MessageToast.show("Please select only one item.");
-      return null;
-    }
-    return aSelectedContexts[0];
-  },
-  
-  _getItemsTable: function () {
-    var sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem";
-    //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
-    return this.byId(sTableId);
-  },
 
   onRevert: function(oEvent){
     const oInput = oEvent.getSource();
@@ -201,49 +202,57 @@ _openEditDialog: function (oContext) {
 
     const oModel = this.getView().getModel();
     const oItemContext = this._oItemContext;
-  
-    // EquipmentCondition / Comments come from the itemCtx-bound fields, read directly
     const sCondition = oItemContext.getProperty("EqCondition");
     const sComments  = oItemContext.getProperty("Comments");
     const sEquipment  = oItemContext.getProperty("Equipment");
+    const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges";
   
-    const buildCall = (fieldName, oldValue, newValue, bApproveFlag) => {
-      const oBinding = oModel.bindContext(
-        "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges(...)",
-        oItemContext
+    const buildSingleCall = (fieldName, oldValue, newValue, equipField, bApproveFlag) => {
+      return this.base.editFlow.securedExecution(
+        () => {
+          const oBinding = oModel.bindContext( sActionName + "(...)", oItemContext );
+          oBinding.setParameter("FieldName",   fieldName   || "");
+          oBinding.setParameter("OldValue",    oldValue    || "");
+          oBinding.setParameter("NewValue",    newValue    || "");
+          oBinding.setParameter("EquipField",  equipField  || "");
+          oBinding.setParameter("EqCondition", sCondition  || "");
+          oBinding.setParameter("Comments",    sComments   || "");
+          oBinding.setParameter("Equipment",   sEquipment  || "");
+          oBinding.setParameter("Approve",     !!bApproveFlag);
+          return oBinding.execute();
+        },
+        {
+          updatableObject: oItemContext, busyControl: this.getView()
+        }
       );
-      oBinding.setParameter("FieldName", fieldName || "");
-      oBinding.setParameter("OldValue", oldValue || "");
-      oBinding.setParameter("NewValue", newValue || "");
-      oBinding.setParameter("EqCondition", sCondition || "");
-      oBinding.setParameter("Comments", sComments || "");
-      oBinding.setParameter("Equipment", sEquipment || "");
-      oBinding.setParameter("Approve", !!bApproveFlag);  // forces any value ("", undefined, "true", 0, etc.) into a genuine boolean 
-
-      return oBinding.execute();
     };
   
     let aCalls;
     if (aChangedRows.length > 0) {
-      aCalls = aChangedRows.map((r, i) =>
-          buildCall(r.fieldName, r.oldValue, r.newValue, i === 0 ? bApproveFlag : false)
+      aCalls = aChangedRows.map((row, i) =>
+        buildSingleCall(
+          row.fieldName, row.oldValue, row.newValue, row.equipmentField, i === 0 ? bApproveFlag : false
+        )
       );
     } else {
-      // no field changes, but still need to push EquipmentCondition/Comments if touched
-      aCalls = [ buildCall("", "", "", bApproveFlag) ];
-    } 
+      aCalls = [ buildSingleCall("", "", "", "", bApproveFlag) ];
+    }
 
-    this._oDialog.setBusy(true);
+
+    this._oDialog.setBusy(true);  // the framework sets the main page busy, but not the dialog
     Promise.all(aCalls).then(() => {
       this._oDialog.setBusy(false);
-      MessageToast.show("Changes saved.");
+      MessageToast.show(bApproveFlag ? "Item approved." : "Changes saved.");
       this._oDialog.close();
-      this._oItemContext.refresh();
-      //this._oItemContext.requestSideEffects(["EqCondition", "Comments", "LastChangedAt", "_Change"]);
+      //this._oItemContext.refresh();
+      this._oItemContext.requestSideEffects([  //"EqCondition", "Comments",
+        "AuditItemStatus", "AuditItemStatusText", "AuditItemStatusCriticality", "LastChangedAt", "_Change"
+      ]);
     }).catch(oErr => {
       this._oDialog.setBusy(false);
-      MessageBox.error("Save failed: " + oErr.message);
+      MessageBox.error((bApproveFlag ? "Approval" : "Save") + " failed: " + oErr.message);
     });
+    
   },
 
   onCancelEquipDialog:function(oEvent){
