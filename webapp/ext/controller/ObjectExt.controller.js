@@ -97,36 +97,40 @@ _openEditDialog: function (oContext) {
   debugger;
     this.getView().setBusy(true);
     const oEquipData = oContext.getObject();
-
-    // Fetch existing change rows for this item via the _Change navigation
     const oChangeListBinding = oContext.getModel().bindList("_AuditChanges", oContext);
 
     oChangeListBinding.requestContexts(0, 100).then(aChangeContexts => {
       const aExistingChanges = aChangeContexts.map(c => c.getObject());
 
       this._getFieldConfig().then(aFieldConfig => {
+
         const aRows = aFieldConfig.map(cfg => {
           const oExisting = aExistingChanges.find(c => c.FieldName === cfg.FieldName);
           const sPrefillValue = oExisting ? oExisting.NewValue : oEquipData[cfg.EquipField];
-
           return {
-            fieldName: cfg.FieldName,
-            label: cfg.LabelEn,
-            oldValue: oEquipData[cfg.EquipField],     // always master data
-            oldValueText: oEquipData[cfg.EquipFieldText],
-            newValue: sPrefillValue,
-            initialValue: sPrefillValue,  // to check changes later
-            valueHelpEntity: cfg.VhEntity,
-            valueHelpKeyField: cfg.VhKeyField,
+            fieldName:          cfg.FieldName,
+            label:              cfg.LabelEn,
+            oldValue:           oEquipData[cfg.EquipField],     // always master data
+            oldValueText:       oEquipData[cfg.EquipFieldText],
+            newValue:           sPrefillValue,
+            initialValue:       sPrefillValue,  // to check changes later
+            valueHelpEntity:    cfg.VhEntity,
+            valueHelpKeyField:  cfg.VhKeyField,
             valueHelpDescField: cfg.VhDescField,
-            approvalMode: this._SuperMode
+            //approvalMode:       this._SuperMode
           };
         });
-  
-        this._oDialogModel = new JSONModel({ fields: aRows });
+
+        this._oDialogModel = new JSONModel({
+          fields:       aRows,
+          approvalMode: !!this._SuperMode,
+          Comments:     oEquipData.Comments     || "",
+          EqCondition:  oEquipData.EqCondition  || "",
+          Equipment:    oEquipData.Equipment    || "",
+        });
+
         this._oItemContext = oContext;
 
-        this._oDialogModel = new JSONModel({ fields: aRows });
         this._loadDialog().then(oDialog => {
           oDialog.setModel(oContext.getModel(), "itemCtx");
           oDialog.setBindingContext(oContext, "itemCtx");
@@ -186,8 +190,8 @@ _openEditDialog: function (oContext) {
   },
 
   
-//---- SAVE ---------------------------
-
+  //---- SAVE ---------------------------
+  //-------------------------------------
   onSaveAndApprove: function(oEvent){
     this._saveEquipChanges(true); // pass Approve = true through
   },
@@ -202,9 +206,9 @@ _openEditDialog: function (oContext) {
 
     const oModel = this.getView().getModel();
     const oItemContext = this._oItemContext;
-    const sCondition = oItemContext.getProperty("EqCondition");
-    const sComments  = oItemContext.getProperty("Comments");
-    const sEquipment  = oItemContext.getProperty("Equipment");
+    const sCondition = this._oDialogModel.getProperty("/EqCondition");   //oItemContext.getProperty("EqCondition");
+    const sComments  = this._oDialogModel.getProperty("/Comments");
+    const sEquipment  = this._oDialogModel.getProperty("/Equipment");     //oItemContext.getProperty("Equipment");
     const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges";
   
     const buildSingleCall = (fieldName, oldValue, newValue, equipField, bApproveFlag) => {
@@ -244,7 +248,7 @@ _openEditDialog: function (oContext) {
       this._oDialog.setBusy(false);
       MessageToast.show(bApproveFlag ? "Item approved." : "Changes saved.");
       this._oDialog.close();
-      //this._oItemContext.refresh();
+      this._oItemContext.refresh();
       this._oItemContext.requestSideEffects([  //"EqCondition", "Comments",
         "AuditItemStatus", "AuditItemStatusText", "AuditItemStatusCriticality", "LastChangedAt", "_Change"
       ]);
