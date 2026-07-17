@@ -29,7 +29,7 @@ sap.ui.define([
                 this._SuperMode = false;
               }
               this.getView().setBusyIndicatorDelay(0);
-
+              
             },
             routing: {
               onBeforeNavigation: function (oContext, oNavigationParameters) {
@@ -42,13 +42,14 @@ sap.ui.define([
               },
               onAfterBinding: function () {
                 const oExtensionAPI = this.base.getExtensionAPI();
-                const sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem";
-                                 //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
-                this._oItemTable = this.base.byId(sTableId);
+                this._sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem"; //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
+                this._oItemTable = this.base.byId(this._sTableId);
                 
                 if (this._oItemTable) {
                   this._oItemTable.attachSelectionChange(this.onTableSelectionChange, this);
                 }
+                this._oItemTable.removeSelections(true);
+                this._oItemTable.fireSelectionChange();
             }
 
 
@@ -59,19 +60,20 @@ sap.ui.define([
 
   onTableSelectionChange: function (oEvent) {
       const aSelectedContexts = this.base.getExtensionAPI().getSelectedContexts(oEvent.getParameter("id"));
-      let isEditVisible = false;
-      let isApproveVisible = false;
+      const oUiModel = this.getView().getModel("ui");
+
+      let showEdit = false;
+      let showApprove = false;
 
       if (aSelectedContexts.length === 1) {
           const oSelectedData = aSelectedContexts[0].getObject(); 
-          var sColumnValue = oSelectedData.YourColumnName;
-
-          // Execute your custom visibility logic here
-          var oUiModel = this.getView().getModel("ui");
-          oUiModel.setProperty("/isEditActionVisible", sColumnValue === "A");
+          const sStatus = oSelectedData.AuditItemStatus;
+          showEdit = true; //(sStatus !== "030");  //Audited
+      } else {
+        showApprove = true;
       }
-      this.getView().getModel("ui").setProperty("/isEditVisible", isEditVisible);
-      this.getView().getModel("ui").setProperty("/isApproveVisible", isApproveVisible);
+      oUiModel.setProperty("/showEdit", showEdit);
+      oUiModel.setProperty("/showApprove", showApprove);
   },
 
 //----------------------------------------------------------------------
@@ -94,7 +96,6 @@ onEditEquipmentValues: function (oEvent, aContexts) {
 },
 
 _openEditDialog: function (oContext) {
-  debugger;
     this.getView().setBusy(true);
     const oEquipData = oContext.getObject();
     const oChangeListBinding = oContext.getModel().bindList("_AuditChanges", oContext);
@@ -343,7 +344,7 @@ _openEditDialog: function (oContext) {
 
   
 //-------------------------------------------------------------------
-// Approve Item
+// Approve Items
 //-------------------------------------------------------------------
   onApproveItems: function (oEvent, aContexts) {
     if (!aContexts) { return; }
@@ -373,7 +374,6 @@ _openEditDialog: function (oContext) {
   
   _executeBulkApprove: function (aContexts) {
     const oModel = this.getView().getModel();
-  
     const aCalls = aContexts.map(oCtx => {
       const oBinding = oModel.bindContext(
         "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.approveItems(...)",
@@ -422,12 +422,9 @@ _openEditDialog: function (oContext) {
     } else {
         var sBarCode = mResult.text;
         var oExtensionAPI = this.base.getExtensionAPI();
-        var sViewId = this.base.getView().getId();
-        var sTableId = sViewId + "--fe::table::_Items::LineItem";
-        
-        var oTable = sap.ui.getCore().byId(sTableId);
-        if (oTable) {
-            var oBinding = oTable.getRowBinding();
+
+        if (this._oItemTable) {
+            var oBinding = this._oItemTable.getRowBinding();
             if (oBinding) {
                 var aContexts = oBinding.getCurrentContexts();
                 var oMatchedContext = aContexts.find(function (oContext) {
@@ -436,10 +433,10 @@ _openEditDialog: function (oContext) {
                 if (oMatchedContext) {
                     // Success: Located the row in the table
                     var oData = oMatchedContext.getObject();
-                    sap.m.MessageToast.show("Found Equipment: " + oData.Equipment);
+                    MessageToast.show("Found Equipment: " + oData.Equipment);
 
                     // Select/highlight the row, you must access the inner control
-                    var oInnerTable = sap.ui.getCore().byId(sTableId + "-innerTable");
+                    var oInnerTable = sap.ui.getCore().byId(this._sTableId + "-innerTable");
                     if (oInnerTable && typeof oInnerTable.getItems === "function") {
                         var aItems = oInnerTable.getItems();
                         var oRowToSelect = aItems.find(function(oItem) {
@@ -452,8 +449,11 @@ _openEditDialog: function (oContext) {
                             }
                             // Select the checkbox if applicable
                             if (typeof oInnerTable.setSelectedItem === "function") {
+                                oInnerTable.removeSelections(true);
                                 oInnerTable.setSelectedItem(oRowToSelect, true);
-                            }
+                                oInnerTable.fireSelectionChange();
+                                this._openEditDialog(oMatchedContext);
+                              }
                             // Scroll viewport focus to the row
                             oRowToSelect.focus();
                         }
