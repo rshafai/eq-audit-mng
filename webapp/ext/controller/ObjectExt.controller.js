@@ -14,6 +14,8 @@ sap.ui.define([
 
     return ControllerExtension.extend('gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt', {
 
+      _fragmentPrefix : "gc.agr.aafc.mm.eqauditmng.ext.fragment.",
+
         // this section allows to extend lifecycle hooks or hooks provided by Fiori elements
         override: {
             /**
@@ -76,10 +78,10 @@ sap.ui.define([
       oUiModel.setProperty("/showApprove", showApprove);
   },
 
-//----------------------------------------------------------------------
-// Edit Dialog
-//----------------------------------------------------------------------
-onEditEquipmentValues: function (oEvent, aContexts) {
+  //────────────────────────────────────────
+  // Edit Dialog
+  //────────────────────────────────────────
+  onEditEquipmentValues: function (oEvent, aContexts) {
   // Fiori Elements automatically passes the selected row context(s)
     if (!aContexts) {
         return;
@@ -151,7 +153,7 @@ _openEditDialog: function (oContext) {
   _loadDialog: function () {
     if (!this._oDialog) {
       return Fragment.load({
-        name: "gc.agr.aafc.mm.eqauditmng.ext.fragment.EditEquip",
+        name: this._fragmentPrefix + "EditEquip",
         controller: this
       }).then(oDialog => {
         this._oDialog = oDialog;
@@ -192,7 +194,8 @@ _openEditDialog: function (oContext) {
 
   
   //---- SAVE ---------------------------
-  //-------------------------------------
+  //────────────────────────────────────────
+
   onSaveAndApprove: function(oEvent){
     this._saveEquipChanges(true); // pass Approve = true through
   },
@@ -299,7 +302,7 @@ _openEditDialog: function (oContext) {
   
     return Fragment.load({
       id: this.getView().getId(),
-      name: "gc.agr.aafc.mm.eqauditmng.ext.fragment.GenericSelectDialog",
+      name: this._fragmentPrefix + "GenericSelectDialog",
       controller: this
     }).then(function (oDialog) {
       this._oGenericVHDialog = oDialog;
@@ -390,9 +393,9 @@ _openEditDialog: function (oContext) {
   },
 
   
-//-------------------------------------------------------------------
+//────────────────────────────────────────
 // Barcode Scan
-//-------------------------------------------------------------------
+//────────────────────────────────────────
 
   onBarcodeScan: function (oEvent) {
     debugger;
@@ -424,53 +427,243 @@ _openEditDialog: function (oContext) {
         var oExtensionAPI = this.base.getExtensionAPI();
 
         if (this._oItemTable) {
-            var oBinding = this._oItemTable.getRowBinding();
-            if (oBinding) {
-                var aContexts = oBinding.getCurrentContexts();
-                var oMatchedContext = aContexts.find(function (oContext) {
-                    return oContext && oContext.getProperty("Equipment") === sBarCode;
-                });
-                if (oMatchedContext) {
-                    // Success: Located the row in the table
-                    var oData = oMatchedContext.getObject();
-                    MessageToast.show("Found Equipment: " + oData.Equipment);
-
-                    // Select/highlight the row, you must access the inner control
-                    var oInnerTable = sap.ui.getCore().byId(this._sTableId + "-innerTable");
-                    if (oInnerTable && typeof oInnerTable.getItems === "function") {
-                        var aItems = oInnerTable.getItems();
-                        var oRowToSelect = aItems.find(function(oItem) {
-                            return typeof oItem.getBindingContext === "function" && oItem.getBindingContext() === oMatchedContext;
-                        });
-                        if (oRowToSelect) {
-                            // Highlight the left border green
-                            if (typeof oRowToSelect.setHighlight === "function") {
-                                oRowToSelect.setHighlight(sap.ui.core.MessageType.Success); 
-                            }
-                            // Select the checkbox if applicable
-                            if (typeof oInnerTable.setSelectedItem === "function") {
-                                oInnerTable.removeSelections(true);
-                                oInnerTable.setSelectedItem(oRowToSelect, true);
-                                oInnerTable.fireSelectionChange();
-                                this._openEditDialog(oMatchedContext);
-                              }
-                            // Scroll viewport focus to the row
-                            oRowToSelect.focus();
-                        }
-                    }
-                } else {
-                    sap.m.MessageToast.show("Equipment not loaded or not found in this table.");
-                }
-            }
+          var oBinding = this._oItemTable.getRowBinding();
+          if (oBinding) {
+            var aContexts = oBinding.getCurrentContexts();
+            var oMatchedContext = aContexts.find(function (oContext) {
+                return oContext && oContext.getProperty("Equipment") === sBarCode;
+            });
+            _highlightItemRow(oMatchedContext);
+          }
         } else {
-            console.error("Could not find table with ID: " + sTableId);
+          console.error("Could not find table with ID: " + sTableId);
         }
     }
-
   },
 
-  
 
+  _highlightItemRow(oContext){
+    if (oContext) {
+      var oData = oContext.getObject();
+      MessageToast.show("Found Equipment: " + oData.Equipment);
+
+      var oInnerTable = sap.ui.getCore().byId(this._sTableId + "-innerTable");
+      if (oInnerTable && typeof oInnerTable.getItems === "function") {
+        var aItems = oInnerTable.getItems();
+        var oRowToSelect = aItems.find(function(oItem) {
+            return typeof oItem.getBindingContext === "function" && oItem.getBindingContext() === oContext;
+        });
+        if (oRowToSelect) {
+          // Scroll viewport focus to the row
+          oRowToSelect.focus();
+          // Highlight the left border green
+          if (typeof oRowToSelect.setHighlight === "function") {
+            //reset previously highlighted rows
+            $.each(aItems, function(index, row){
+              row.setHighlight(sap.ui.core.MessageType.None);
+            });
+            oRowToSelect.setHighlight(sap.ui.core.MessageType.Success); 
+          }
+          // Select the checkbox and open edit/details dialog
+          if (typeof oInnerTable.setSelectedItem === "function") {
+            oInnerTable.removeSelections(true);
+            oInnerTable.setSelectedItem(oRowToSelect, true);
+            oInnerTable.fireSelectionChange();
+            //Open edit dialog
+            this._openEditDialog(oContext);
+          }
+        }
+      }
+    } else {
+        MessageToast.show("Equipment not loaded or not found in this table.");
+    }
+  },
+
+  _highlightItemRow2: function (oContext) {
+    const oTable = this._getItemsTable();
+  
+    // scroll to and select the row
+    const aItems = oTable.getItems();
+    const oMatchItem = aItems.find(oItem =>
+      oItem.getBindingContext() === oContext ||
+      oItem.getBindingContext().getPath() === oContext.getPath()
+    );
+  
+    if (!oMatchItem) { return; }
+  
+    // scroll into view
+    oTable.scrollToIndex(aItems.indexOf(oMatchItem));
+  
+    // select the row
+    oTable.setSelectedItem(oMatchItem, true);
+  
+    // highlight briefly with ValueState if supported, or just rely on selection
+    oMatchItem.addStyleClass("sapUiDemoHighlight");
+    setTimeout(() => oMatchItem.removeStyleClass("sapUiDemoHighlight"), 2000);
+  },
+
+
+//────────────────────────────────────────
+// Manual Search
+//────────────────────────────────────────
+onManualSearchButtonPress: function (oContext, aSelectedContexts) {
+  this._loadManualSearchPopover().then(oPopover => {
+    const sButtonId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem::CustomAction::ManualSearch";
+    const oButton = sap.ui.getCore().byId(sButtonId);
+
+    if (oButton) {
+      oPopover.openBy(oButton);
+    } else {
+      oPopover.openBy(this.base.getView());
+    }
+  });
+},
+
+_loadManualSearchPopover: function () {
+  if (this._oManualSearchPopover) {
+    return Promise.resolve(this._oManualSearchPopover);
+  }
+  return Fragment.load({
+    id: this.getView().getId(),
+    name: this._fragmentPrefix + "ManualSearchPopover",
+    controller: this
+  }).then(oPopover => {
+    this._oManualSearchPopover = oPopover;
+    this.getView().addDependent(oPopover);
+    return oPopover;
+  });
+},
+
+onManualSearchEquipment: function (oEvent) {
+  const sQuery = oEvent.getParameter("query").trim();
+  if (!sQuery) { return; }
+
+  const oTable = this._oItemTable;
+  const aContexts = oTable.getRowBinding().getCurrentContexts(); //oTable.getBinding("items").getCurrentContexts();
+
+  // normalize - pad to 18 chars to handle user typing "816259" vs "000000000000816259"
+  const sPadded = sQuery.padStart(18, '0');
+
+  const oMatchContext = aContexts.find(oCtx => {
+    const sEquipment = oCtx.getProperty("Equipment");
+    return sEquipment === sPadded || sEquipment === sQuery;
+  });
+
+  if (oMatchContext) {
+    this._oManualSearchPopover.close();
+    this._highlightItemRow(oMatchContext);
+  } else {
+    MessageToast.show(
+      "Equipment " + sQuery + " not found in this audit. Use 'Add Equipment' to search master data."
+    );
+  }
+},
+
+
+//────────────────────────────────────────
+// Add Equipment
+//────────────────────────────────────────
+onAddEquipmentOpen: function () {
+  this._loadMasterSearchDialog().then(oDialog => {
+    oDialog.unbindAggregation("items");
+    oDialog.bindAggregation("items", {
+      path: "/ZQMM_R_Equip_BarcodeTR",
+      template: new StandardListItem({
+        title: "{Equipment} - {EquipmentName}",
+        description: "{ManufacturerSerialNumber} | {Manufacturer}"
+      })
+    });
+    oDialog.setModel(this.getView().getModel());
+    oDialog.open();
+  });
+
+},
+
+_loadMasterSearchDialog: function () {
+  if (this._oMasterSearchDialog) {
+    return Promise.resolve(this._oMasterSearchDialog);
+  }
+  return Fragment.load({
+    id: this.getView().getId(),
+    name: this._fragmentPrefix + "MasterSearchDialog",
+    controller: this
+  }).then(oDialog => {
+    this._oMasterSearchDialog = oDialog;
+    this.getView().addDependent(oDialog);
+    return oDialog;
+  });
+},
+
+onMasterSearchConfirm: function (oEvent) {
+  const oSelectedItem = oEvent.getParameter("selectedItem");
+  if (!oSelectedItem) { return; }
+  const sEquipment = oSelectedItem.getBindingContext().getProperty("Equipment");
+  this._addEquipmentToAudit(sEquipment);
+},
+
+onMasterSearch: function (oEvent) {
+  const sValue = oEvent.getParameter("value");
+  const oBinding = oEvent.getSource().getBinding("items");
+  if (!oBinding) { return; }
+
+  oBinding.filter(sValue ? new Filter({
+    filters: [
+      new Filter("Equipment",               FilterOperator.Contains, sValue),
+      new Filter("EquipmentName",           FilterOperator.Contains, sValue),
+      new Filter("ManufacturerSerialNumber", FilterOperator.Contains, sValue),
+      new Filter("Manufacturer",            FilterOperator.Contains, sValue)
+    ],
+    and: false
+  }) : []);
+},
+
+onMasterSearchCancel: function (oEvent) {
+  oEvent.getSource().getBinding("items").filter([]);
+},
+
+
+_addEquipmentToAudit: function (sEquipment) {
+  // validate against master (already confirmed it exists since we picked from master search)
+  // and create a new audit item
+  const oHeaderContext = this.getView().getBindingContext();
+  const oModel = this.getView().getModel();
+
+  this.base.editFlow.securedExecution(
+    () => {
+      const oListBinding = oModel.bindList(
+        "_AuditItems",
+        oHeaderContext,
+        [], [],
+        { $$updateGroupId: "$auto" }
+      );
+      // create() returns a Context synchronously
+      const oNewItemContext = oListBinding.create({
+        Equipment: sEquipment
+        // AuditDocId not needed - derived from parent context by the framework
+      });
+
+      // .created() returns a Promise that resolves when the backend POST completes
+      return oNewItemContext.created();
+    },
+    {
+      updatableObject: oHeaderContext,
+      busyControl: this.getView()
+    }
+  ).then(() => {
+    MessageToast.show("Equipment " + sEquipment + " added to audit.");
+    this._refreshItemTable();
+
+  }).catch(oErr => {
+    MessageBox.error("Could not add equipment: " + oErr.message);
+  });
+},
+
+_refreshItemTable: function () {
+  const oHeaderContext = this.getView().getBindingContext();
+  if (oHeaderContext) {
+    oHeaderContext.requestSideEffects(["_AuditItems"]);
+  }
+}
 
 
 

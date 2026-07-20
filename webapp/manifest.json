@@ -166,7 +166,7 @@
                     "to_YourItemEntity": {
                         "type": "custom"
                     }
-                },
+                  },
                   "actions": {
                     "EditItem": {
                       "id": "EditItem",
@@ -190,6 +190,24 @@
                       "enabled": true,
                       "requiresSelection": false,
                       "text": "Barcode Scan"
+                    },
+                    "ManualSearch": {
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onManualSearchButtonPress",
+                      "text": "Manual Search",
+                      "enabled": true,
+                      "position": {
+                        "placement": "After",
+                        "anchor": "BarcodeScan"
+                      }
+                    },
+                    "AddEquipment": {
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onAddEquipmentOpen",
+                      "text": "Add Equipment",
+                      "enabled": true,
+                      "position": {
+                        "placement": "After",
+                        "anchor": "ManualSearch"
+                      }
                     }
                   }
                 }

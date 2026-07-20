@@ -1,0 +1,18 @@
+<!-- z.audit.ext.fragment.ManualSearchPopover -->
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+  <Popover
+    id="manualSearchPopover"
+    title="Search Equipment"
+    placement="Bottom"
+    showHeader="true">
+    <content>
+      <HBox alignItems="Center" class="sapUiSmallMargin">
+        <SearchField
+          id="manualSearchInput"
+          placeholder="Equipment number"
+          width="16rem"
+          search=".onManualSearchEquipment" />
+      </HBox>
+    </content>
+  </Popover>
+</core:FragmentDefinition>

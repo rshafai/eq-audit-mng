@@ -1,0 +1,28 @@
+<!-- z/audit/ext/fragment/MasterSearchDialog.fragment.xml -->
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core">
+
+  <SelectDialog
+    id="masterSearchDialog"
+    title="Search Equipment Master"
+    search=".onMasterSearch"
+    confirm=".onMasterSearchConfirm"
+    cancel=".onMasterSearchCancel"
+    noDataText="No equipment found. Please refine your search."
+    growing="true"
+    growingThreshold="50"
+    
+    contentWidth="40rem">
+
+    <items>
+      <StandardListItem
+        id="idEquipList"
+        title="{Equipment} – {EquipmentName}"
+        description="{ManufacturerSerialNumber} | {Manufacturer}"
+        type="Active" />
+    </items>
+
+  </SelectDialog>
+
+</core:FragmentDefinition>
