@@ -566,23 +566,20 @@ onManualSearchEquipment: function (oEvent) {
 onAddEquipmentOpen: function () {
   this._loadMasterSearchDialog().then(oDialog => {
     oDialog.setModel(this.getView().getModel());
-    oDialog.setBindingContext(null);
+    //oDialog.setBindingContext(null);
 
-    // get the internal list that SelectDialog wraps
-    const oInternalList = oDialog._oList;
+    oDialog.bindElement({ path: ""  }); //break header context inheritance - "" means start from root
 
-    if (oInternalList) {
-      oInternalList.bindItems({
-        path: "/ZQMM_R_Equip_BarcodeTR",
-        template: new StandardListItem({
-          title: "{Equipment} \u2013 {EquipmentName}",
-          description: "{Manufacturer} | {ManufacturerSerialNumber}",
-          type: "Active"
-        }),
-        templateShareable: false
-      });
-    }
-
+    oDialog.unbindAggregation("items");
+    oDialog.bindAggregation("items", {
+      path: "/ZQMM_R_Equip_BarcodeTR",
+      template: new StandardListItem({
+        title: "{Equipment} \u2013 {EquipmentName}",
+        description: "{Manufacturer} | {ManufacturerSerialNumber}",
+        type: "Active"
+      }),
+      templateShareable: false
+    });
     oDialog.open();
   });
 },
@@ -591,13 +588,13 @@ _loadMasterSearchDialog: function () {
   if (this._oMasterSearchDialog) {
     return Promise.resolve(this._oMasterSearchDialog);
   }
-  return Fragment.load({
+  return Fragment.load({ 
     id: this.getView().getId(),
     name: this._fragmentPrefix + "MasterSearchDialog",
     controller: this
   }).then(oDialog => {
     this._oMasterSearchDialog = oDialog;
-    //this.getView().addDependent(oDialog);  //dialog inherits the view's binding context (Header)
+    this.getView().addDependent(oDialog);
     return oDialog;
   });
 },

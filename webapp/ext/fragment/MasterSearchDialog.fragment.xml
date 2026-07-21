@@ -15,15 +15,14 @@
     noDataText="No equipment found. Please refine your search."
     growing="true"
     growingThreshold="50"
-    
     contentWidth="40rem">
 
-    <items>
+    <!-- <items>
       <StandardListItem
         title="{Equipment} – {EquipmentName}"
         description="{Manufacturer} | {ManufacturerSerialNumber} | {ModelNumber} | {FunctionalLocationName} | {CostCenterName}"
         type="Active" />
-    </items>
+    </items> -->
 
   </SelectDialog>
 
