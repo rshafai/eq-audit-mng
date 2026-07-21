@@ -9,6 +9,9 @@
     search=".onMasterSearch"
     confirm=".onMasterSearchConfirm"
     cancel=".onMasterSearchCancel"
+    draggable="true"
+    resizable="true"
+    searchPlaceholder="Search by Equipment #, Description, Serial Number,..."
     noDataText="No equipment found. Please refine your search."
     growing="true"
     growingThreshold="50"
@@ -17,9 +20,8 @@
 
     <items>
       <StandardListItem
-        id="idEquipList"
         title="{Equipment} – {EquipmentName}"
-        description="{ManufacturerSerialNumber} | {Manufacturer}"
+        description="{Manufacturer} | {ManufacturerSerialNumber} | {ModelNumber} | {FunctionalLocationName} | {CostCenterName}"
         type="Active" />
     </items>
 

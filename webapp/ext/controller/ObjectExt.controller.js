@@ -565,18 +565,26 @@ onManualSearchEquipment: function (oEvent) {
 //────────────────────────────────────────
 onAddEquipmentOpen: function () {
   this._loadMasterSearchDialog().then(oDialog => {
-    oDialog.unbindAggregation("items");
-    oDialog.bindAggregation("items", {
-      path: "/ZQMM_R_Equip_BarcodeTR",
-      template: new StandardListItem({
-        title: "{Equipment} - {EquipmentName}",
-        description: "{ManufacturerSerialNumber} | {Manufacturer}"
-      })
-    });
     oDialog.setModel(this.getView().getModel());
+    oDialog.setBindingContext(null);
+
+    // get the internal list that SelectDialog wraps
+    const oInternalList = oDialog._oList;
+
+    if (oInternalList) {
+      oInternalList.bindItems({
+        path: "/ZQMM_R_Equip_BarcodeTR",
+        template: new StandardListItem({
+          title: "{Equipment} \u2013 {EquipmentName}",
+          description: "{Manufacturer} | {ManufacturerSerialNumber}",
+          type: "Active"
+        }),
+        templateShareable: false
+      });
+    }
+
     oDialog.open();
   });
-
 },
 
 _loadMasterSearchDialog: function () {
@@ -589,7 +597,7 @@ _loadMasterSearchDialog: function () {
     controller: this
   }).then(oDialog => {
     this._oMasterSearchDialog = oDialog;
-    this.getView().addDependent(oDialog);
+    //this.getView().addDependent(oDialog);  //dialog inherits the view's binding context (Header)
     return oDialog;
   });
 },
@@ -611,7 +619,9 @@ onMasterSearch: function (oEvent) {
       new Filter("Equipment",               FilterOperator.Contains, sValue),
       new Filter("EquipmentName",           FilterOperator.Contains, sValue),
       new Filter("ManufacturerSerialNumber", FilterOperator.Contains, sValue),
-      new Filter("Manufacturer",            FilterOperator.Contains, sValue)
+      new Filter("Manufacturer",            FilterOperator.Contains, sValue),
+      new Filter("CostCenter",              FilterOperator.Contains, sValue),
+      new Filter("FunctionalLocation",      FilterOperator.Contains, sValue)
     ],
     and: false
   }) : []);
@@ -631,15 +641,15 @@ _addEquipmentToAudit: function (sEquipment) {
   this.base.editFlow.securedExecution(
     () => {
       const oListBinding = oModel.bindList(
-        "_AuditItems",
-        oHeaderContext,
-        [], [],
-        { $$updateGroupId: "$auto" }
+                                "_AuditItems",
+                                oHeaderContext,
+                                [], [],
+                                { $$updateGroupId: "$auto" }
       );
       // create() returns a Context synchronously
       const oNewItemContext = oListBinding.create({
-        Equipment: sEquipment
-        // AuditDocId not needed - derived from parent context by the framework
+                                Equipment: sEquipment
+                                // AuditDocId not needed - derived from parent context by the framework
       });
 
       // .created() returns a Promise that resolves when the backend POST completes
