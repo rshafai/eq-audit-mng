@@ -9,9 +9,13 @@
       <HBox alignItems="Center" class="sapUiSmallMargin">
         <SearchField
           id="manualSearchInput"
-          placeholder="Equipment number"
+          placeholder="Equipment Number"
           width="16rem"
+          enableSuggestions="true"
           search=".onManualSearchEquipment" />
+      <!-- </HBox visible="{ui>/showSearchNotFound}">
+        <Text ></Text>
+      <HBox > -->
       </HBox>
     </content>
   </Popover>

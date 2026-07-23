@@ -1,0 +1,32 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+  <Dialog
+    id="exceptionDialog"
+    title="Equipment Not in SAP"
+    contentWidth="30rem">
+    <content>
+      <VBox class="sapUiSmallMargin">
+        <FormattedText htmlText="{ui>/excepMessage}"/>
+        <Label text="Manufacturer Serial Number" />
+        <Input
+          value="{exc>/manufacturerSerialNo}"
+          placeholder="Enter serial number from physical unit" />
+        <Label text="Manufacturer" class="sapUiTinyMarginTop" />
+        <Input
+          value="{exc>/manufacturer}"
+          placeholder="Enter manufacturer name" />
+        <Label text="Notes" class="sapUiTinyMarginTop" />
+        <TextArea
+          value="{exc>/notes}"
+          rows="3"
+          width="100%"
+          placeholder="Any additional notes about this equipment" />
+      </VBox>
+    </content>
+    <beginButton>
+      <Button text="Add Exception" type="Emphasized" press=".onSaveException" />
+    </beginButton>
+    <endButton>
+      <Button text="Cancel" press=".onCancelException" />
+    </endButton>
+  </Dialog>
+</core:FragmentDefinition>

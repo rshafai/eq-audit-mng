@@ -55,7 +55,7 @@
   "sap.ui5": {
     "flexEnabled": true,
     "dependencies": {
-      "minUI5Version": "1.120.32",
+      "minUI5Version": "1.120.47",
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
@@ -159,7 +159,8 @@
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "entitySet": "ZQMM_C_Audit_Header",
+              "entitySet": "ZQMM_C_Audit_Header", 
+              "editableHeaderContent": false,
               "controlConfiguration": {
                 "_AuditItems/@com.sap.vocabularies.UI.v1.LineItem": {
                   "navigation": {
@@ -193,7 +194,7 @@
                     },
                     "ManualSearch": {
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onManualSearchButtonPress",
-                      "text": "Manual Search",
+                      "text": "Quick Search",
                       "enabled": true,
                       "position": {
                         "placement": "After",
@@ -207,6 +208,15 @@
                       "position": {
                         "placement": "After",
                         "anchor": "ManualSearch"
+                      }
+                    },
+                    "NotInSAP": {
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onNotInSAPPress",
+                      "text": "Report an Exception",
+                      "enabled": true,
+                      "position": {
+                        "placement": "After",
+                        "anchor": "AddEquipment"
                       }
                     }
                   }

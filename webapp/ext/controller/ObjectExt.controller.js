@@ -31,7 +31,15 @@ sap.ui.define([
                 this._SuperMode = false;
               }
               this.getView().setBusyIndicatorDelay(0);
-              
+
+              let oUIModel = new JSONModel({
+                excepMessage: "<p>You can use Exceptions to identify equipment that are not found in SAP.</p>" + 
+                              "<p class=\"sapUiLargeMarginBottom\">Please use <strong>Add Equipment</strong> first to search for the equipment in SAP, if found you can add it to the Audit Items list.&nbsp;" + 
+                              "If not found then please report it as an Exception.</p>",
+                showEdit: false,
+                showApprove: false
+              });
+              this.getView().setModel(oUIModel, "ui");
             },
             routing: {
               onBeforeNavigation: function (oContext, oNavigationParameters) {
@@ -44,9 +52,16 @@ sap.ui.define([
               },
               onAfterBinding: function () {
                 const oExtensionAPI = this.base.getExtensionAPI();
-                this._sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem"; //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
-                this._oItemTable = this.base.byId(this._sTableId);
-                
+                const sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem"; 
+                //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
+                //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem-innerTable
+                //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem-innerTable
+
+                debugger;
+                this._oItemTable = this.base.byId(sTableId);
+                // inner  table may not be rendered yet
+                // var oInnerTable = this._oItemTable.getControl() || this.base.getView().byId(this._oItemTable.getId() + "-innerTable");
+        
                 if (this._oItemTable) {
                   this._oItemTable.attachSelectionChange(this.onTableSelectionChange, this);
                 }
@@ -55,7 +70,7 @@ sap.ui.define([
             }
 
 
-            } // routing
+          } // routing
 
         }, // override
 
@@ -70,7 +85,8 @@ sap.ui.define([
       if (aSelectedContexts.length === 1) {
           const oSelectedData = aSelectedContexts[0].getObject(); 
           const sStatus = oSelectedData.AuditItemStatus;
-          showEdit = true; //(sStatus !== "030");  //Audited
+          showEdit = true; 
+          showApprove = (sStatus !== "030");  //Audited
       } else {
         showApprove = true;
       }
@@ -78,10 +94,10 @@ sap.ui.define([
       oUiModel.setProperty("/showApprove", showApprove);
   },
 
-  //────────────────────────────────────────
-  // Edit Dialog
-  //────────────────────────────────────────
-  onEditEquipmentValues: function (oEvent, aContexts) {
+//────────────────────────────────────────
+// Edit Dialog
+//────────────────────────────────────────
+onEditEquipmentValues: function (oEvent, aContexts) {
   // Fiori Elements automatically passes the selected row context(s)
     if (!aContexts) {
         return;
@@ -147,9 +163,6 @@ _openEditDialog: function (oContext) {
       });
     });
   },
-
-
-
   _loadDialog: function () {
     if (!this._oDialog) {
       return Fragment.load({
@@ -194,7 +207,6 @@ _openEditDialog: function (oContext) {
 
   
   //---- SAVE ---------------------------
-  //────────────────────────────────────────
 
   onSaveAndApprove: function(oEvent){
     this._saveEquipChanges(true); // pass Approve = true through
@@ -246,24 +258,31 @@ _openEditDialog: function (oContext) {
       aCalls = [ buildSingleCall("", "", "", "", bApproveFlag) ];
     }
 
-
     this._oDialog.setBusy(true);  // the framework sets the main page busy, but not the dialog
     Promise.all(aCalls).then(() => {
       this._oDialog.setBusy(false);
-      MessageToast.show(bApproveFlag ? "Item approved." : "Changes saved.");
-      this._oDialog.close();
+      MessageToast.show(bApproveFlag ? "Item approved." : "Changes saved for Equipment: "+ sEquipment );
+      this.onCancelEquipDialog();  //this._oDialog.close();
       this._oItemContext.refresh();
       this._oItemContext.requestSideEffects([  //"EqCondition", "Comments",
         "AuditItemStatus", "AuditItemStatusText", "AuditItemStatusCriticality", "LastChangedAt", "_Change"
       ]);
-    }).catch(oErr => {
+    }).catch(oErr => { 
       this._oDialog.setBusy(false);
       MessageBox.error((bApproveFlag ? "Approval" : "Save") + " failed: " + oErr.message);
     });
     
   },
 
+  _getInnerTable(){
+    return this.base.getView().byId(this._oItemTable.getId() + "-innerTable")
+  },
   onCancelEquipDialog:function(oEvent){
+    let oInnerTable = this._getInnerTable();
+    if (oInnerTable) {
+      oInnerTable.removeSelections();
+      oInnerTable.fireSelectionChange();
+    }
     if (this._oDialog){
         this._oDialog.close();
     }
@@ -396,7 +415,6 @@ _openEditDialog: function (oContext) {
 //────────────────────────────────────────
 // Barcode Scan
 //────────────────────────────────────────
-
   onBarcodeScan: function (oEvent) {
     debugger;
        BarcodeScanner.scan(
@@ -433,7 +451,7 @@ _openEditDialog: function (oContext) {
             var oMatchedContext = aContexts.find(function (oContext) {
                 return oContext && oContext.getProperty("Equipment") === sBarCode;
             });
-            _highlightItemRow(oMatchedContext);
+            this._highlightItemRow(oMatchedContext);
           }
         } else {
           console.error("Could not find table with ID: " + sTableId);
@@ -441,66 +459,45 @@ _openEditDialog: function (oContext) {
     }
   },
 
-
   _highlightItemRow(oContext){
     if (oContext) {
       var oData = oContext.getObject();
       MessageToast.show("Found Equipment: " + oData.Equipment);
 
-      var oInnerTable = sap.ui.getCore().byId(this._sTableId + "-innerTable");
-      if (oInnerTable && typeof oInnerTable.getItems === "function") {
-        var aItems = oInnerTable.getItems();
-        var oRowToSelect = aItems.find(function(oItem) {
-            return typeof oItem.getBindingContext === "function" && oItem.getBindingContext() === oContext;
-        });
-        if (oRowToSelect) {
-          // Scroll viewport focus to the row
-          oRowToSelect.focus();
-          // Highlight the left border green
-          if (typeof oRowToSelect.setHighlight === "function") {
-            //reset previously highlighted rows
-            $.each(aItems, function(index, row){
-              row.setHighlight(sap.ui.core.MessageType.None);
-            });
-            oRowToSelect.setHighlight(sap.ui.core.MessageType.Success); 
-          }
-          // Select the checkbox and open edit/details dialog
-          if (typeof oInnerTable.setSelectedItem === "function") {
-            oInnerTable.removeSelections(true);
-            oInnerTable.setSelectedItem(oRowToSelect, true);
-            oInnerTable.fireSelectionChange();
-            //Open edit dialog
-            this._openEditDialog(oContext);
+      var oTable = this._getInnerTable();
+      
+      if (oTable && typeof oTable.getItems === "function") {
+        var aItems = oTable.getItems();
+        //reset previously highlighted rows
+        // $.each(aItems, function(index, row){
+        //   row.setHighlight(sap.ui.core.MessageType.None);
+        // });
+        oTable.removeSelections(true);
+
+        if (oContext){
+          var oRowToSelect = aItems.find(function(oItem) {
+              return typeof oItem.getBindingContext === "function" && oItem.getBindingContext() === oContext;
+          });
+          if (oRowToSelect) {
+            oRowToSelect.focus();
+            // oRowToSelect.setHighlight(sap.ui.core.MessageType.Success); // Highlight the left border green
+
+            // Select the checkbox and open edit/details dialog
+            if (typeof oTable.setSelectedItem === "function") {
+              oTable.setSelectedItem(oRowToSelect, true);
+              oTable.fireSelectionChange();
+
+              //Open edit dialog
+              this._openEditDialog(oContext);
+            }
           }
         }
       }
     } else {
-        MessageToast.show("Equipment not loaded or not found in this table.");
+        MessageToast.show("Equipment not loaded or not found in this table. You can use 'Add Equipment' to search SAP master data.");
     }
   },
 
-  _highlightItemRow2: function (oContext) {
-    const oTable = this._getItemsTable();
-  
-    // scroll to and select the row
-    const aItems = oTable.getItems();
-    const oMatchItem = aItems.find(oItem =>
-      oItem.getBindingContext() === oContext ||
-      oItem.getBindingContext().getPath() === oContext.getPath()
-    );
-  
-    if (!oMatchItem) { return; }
-  
-    // scroll into view
-    oTable.scrollToIndex(aItems.indexOf(oMatchItem));
-  
-    // select the row
-    oTable.setSelectedItem(oMatchItem, true);
-  
-    // highlight briefly with ValueState if supported, or just rely on selection
-    oMatchItem.addStyleClass("sapUiDemoHighlight");
-    setTimeout(() => oMatchItem.removeStyleClass("sapUiDemoHighlight"), 2000);
-  },
 
 
 //────────────────────────────────────────
@@ -554,7 +551,7 @@ onManualSearchEquipment: function (oEvent) {
     this._highlightItemRow(oMatchContext);
   } else {
     MessageToast.show(
-      "Equipment " + sQuery + " not found in this audit. Use 'Add Equipment' to search master data."
+      "Equipment " + sQuery + " not found in this audit. You can use 'Add Equipment' to search SAP master data."
     );
   }
 },
@@ -670,8 +667,79 @@ _refreshItemTable: function () {
   if (oHeaderContext) {
     oHeaderContext.requestSideEffects(["_AuditItems"]);
   }
-}
+},
 
+
+
+//────────────────────────────────────────
+// Add Exception
+//────────────────────────────────────────
+onNotInSAPPress: function (oContext, aSelectedContexts) {
+  this._loadExceptionDialog().then(oDialog => {
+    this._oExceptionModel = new JSONModel({
+      manufacturerSerialNo: "",
+      manufacturer:         "",
+      notes:                ""
+    });
+    oDialog.setModel(this._oExceptionModel, "exc");
+    oDialog.open();
+  });
+},
+
+_loadExceptionDialog: function () {
+  if (this._oExceptionDialog) {
+    return Promise.resolve(this._oExceptionDialog);
+  }
+  return Fragment.load({
+    id:         this.getView().getId(),
+    name:       this._fragmentPrefix + "ExceptionDialog",
+    controller: this
+  }).then(oDialog => {
+    this._oExceptionDialog = oDialog;
+    this.getView().addDependent(oDialog);
+    return oDialog;
+  });
+},
+
+onSaveException: function () {
+  const oModel          = this.getView().getModel();
+  const oHeaderContext  = this.getView().getBindingContext();
+  const sActionName     = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.addException";
+  const oExcData        = this._oExceptionModel.getData();
+
+  if (!oExcData.manufacturerSerialNo) {
+    MessageBox.error("Manufacturer Serial Number is required.");
+    return;
+  }
+
+  this.base.editFlow.securedExecution(
+    () => {
+      const oBinding = oModel.bindContext(
+        sActionName + "(...)",
+        oHeaderContext
+      );
+      oBinding.setParameter("ManufacturerSerialNo", oExcData.manufacturerSerialNo);
+      oBinding.setParameter("Manufacturer",         oExcData.manufacturer);
+      oBinding.setParameter("Notes",                oExcData.notes);
+      return oBinding.execute();
+    },
+    {
+      updatableObject: oHeaderContext,
+      busyControl:     this.getView()
+    }
+  ).then(() => {
+    MessageToast.show("Exception recorded successfully.");
+    this._oExceptionDialog.close();
+    // refresh the exception table
+    oHeaderContext.requestSideEffects(["_AuditException"]);
+  }).catch(oErr => {
+    MessageBox.error("Could not save exception: " + oErr.message);
+  });
+},
+
+onCancelException: function () {
+  this._oExceptionDialog.close();
+}
 
 
   });
