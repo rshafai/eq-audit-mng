@@ -11,13 +11,14 @@
       resizable="true"
       contentWidth="50%">
       <customHeader>
-        <Bar>
+        <Bar >
             <contentLeft>
               <Text text="Edit Equipment" />
                 <!-- Add optional icon or back button here -->
             </contentLeft>
             <contentMiddle>
-              <Text text="{itemCtx>isEditable}"></Text>
+              <Text text="{dlg>/exceptionType}"></Text>
+              <MessageStrip type="Error" text="Exception Declared" visible="{= ${dlg>/exceptionType}>'000'  }" class="sapUiTinyMargin" />
                 
             </contentMiddle>
             <contentRight>
@@ -67,6 +68,21 @@
         <VBox width="100%">  -->
           <Label text="Auditor's Comments" class="sapUiTinyMarginTop"/>
           <TextArea value="{dlg>/Comments}" rows="3" width="100%" />
+
+          <Label text="Exception" class="sapUiTinyMarginTop" />
+          <Select
+            valueState="{= (${dlg>/exceptionType}>'000')?'Warning':'Success' }"
+            valueStateText="  "
+            selectedKey="{
+              path: 'dlg>/exceptionType',
+              type: 'sap.ui.model.odata.type.String',
+              constraints: { maxLength: 3 }
+            }"
+            items="{ path: '/ExceptionTypeVH' }">
+            <c:Item
+              key="{Value}"
+              text="{Text}" />
+          </Select>
         <!-- </VBox>     
       </HBox>  -->
 

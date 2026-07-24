@@ -159,13 +159,13 @@
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "entitySet": "ZQMM_C_Audit_Header", 
+              "entitySet": "ZQMM_C_Audit_Header",
               "editableHeaderContent": false,
               "controlConfiguration": {
                 "_AuditItems/@com.sap.vocabularies.UI.v1.LineItem": {
                   "navigation": {
                     "to_YourItemEntity": {
-                        "type": "custom"
+                      "type": "custom"
                     }
                   },
                   "actions": {
@@ -194,7 +194,7 @@
                     },
                     "ManualSearch": {
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onManualSearchButtonPress",
-                      "text": "Quick Search",
+                      "text": "Quick Search {ui>/filterStar}",
                       "enabled": true,
                       "position": {
                         "placement": "After",

@@ -6,10 +6,11 @@ sap.ui.define([
     "sap/ui/model/Sorter",
     "sap/ui/model/Filter",
 	  "sap/ui/model/FilterOperator",
+    "sap/ui/model/FilterType",
     "sap/ndc/BarcodeScanner",
     "sap/ui/core/Fragment",
     "sap/ui/model/json/JSONModel"
-], function (ControllerExtension, MessageToast, MessageBox, StandardListItem, Sorter, Filter, FilterOperator, BarcodeScanner, Fragment, JSONModel) {
+], function (ControllerExtension, MessageToast, MessageBox, StandardListItem, Sorter, Filter, FilterOperator, FilterType, BarcodeScanner, Fragment, JSONModel) {
     'use strict';
 
     return ControllerExtension.extend('gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt', {
@@ -51,22 +52,13 @@ sap.ui.define([
                 return true;
               },
               onAfterBinding: function () {
-                const oExtensionAPI = this.base.getExtensionAPI();
-                const sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem"; 
-                //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
-                //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem-innerTable
-                //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem-innerTable
-
-                debugger;
-                this._oItemTable = this.base.byId(sTableId);
-                // inner  table may not be rendered yet
-                // var oInnerTable = this._oItemTable.getControl() || this.base.getView().byId(this._oItemTable.getId() + "-innerTable");
-        
-                if (this._oItemTable) {
-                  this._oItemTable.attachSelectionChange(this.onTableSelectionChange, this);
+debugger;
+                var oTable = this._getItemsTable();
+                if (oTable) {
+                  oTable.attachSelectionChange(this.onTableSelectionChange, this);
+                  oTable.removeSelections(true);
+                  oTable.fireSelectionChange();
                 }
-                this._oItemTable.removeSelections(true);
-                this._oItemTable.fireSelectionChange();
             }
 
 
@@ -146,6 +138,7 @@ _openEditDialog: function (oContext) {
           Comments:     oEquipData.Comments     || "",
           EqCondition:  oEquipData.EqCondition  || "",
           Equipment:    oEquipData.Equipment    || "",
+          ExceptionType:  oEquipData.ExceptionType || ""  
         });
 
         this._oItemContext = oContext;
@@ -222,8 +215,6 @@ _openEditDialog: function (oContext) {
 
     const oModel = this.getView().getModel();
     const oItemContext = this._oItemContext;
-    const sCondition = this._oDialogModel.getProperty("/EqCondition");   //oItemContext.getProperty("EqCondition");
-    const sComments  = this._oDialogModel.getProperty("/Comments");
     const sEquipment  = this._oDialogModel.getProperty("/Equipment");     //oItemContext.getProperty("Equipment");
     const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges";
   
@@ -231,14 +222,15 @@ _openEditDialog: function (oContext) {
       return this.base.editFlow.securedExecution(
         () => {
           const oBinding = oModel.bindContext( sActionName + "(...)", oItemContext );
-          oBinding.setParameter("FieldName",   fieldName   || "");
-          oBinding.setParameter("OldValue",    oldValue    || "");
-          oBinding.setParameter("NewValue",    newValue    || "");
-          oBinding.setParameter("EquipField",  equipField  || "");
-          oBinding.setParameter("EqCondition", sCondition  || "");
-          oBinding.setParameter("Comments",    sComments   || "");
-          oBinding.setParameter("Equipment",   sEquipment  || "");
-          oBinding.setParameter("Approve",     !!bApproveFlag);
+          oBinding.setParameter("FieldName",      fieldName   || "");
+          oBinding.setParameter("OldValue",       oldValue    || "");
+          oBinding.setParameter("NewValue",       newValue    || "");
+          oBinding.setParameter("EquipField",     equipField  || "");
+          oBinding.setParameter("Equipment",      sEquipment  || "");
+          oBinding.setParameter("EqCondition",    this._oDialogModel.getProperty("/EqCondition")  || "");
+          oBinding.setParameter("Comments",       this._oDialogModel.getProperty("/Comments")   || "");
+          oBinding.setParameter("ExceptionType",  this._oDialogModel.getProperty("/ExceptionType")  || "");
+          oBinding.setParameter("Approve",        !!bApproveFlag);
           return oBinding.execute();
         },
         {
@@ -265,7 +257,7 @@ _openEditDialog: function (oContext) {
       this.onCancelEquipDialog();  //this._oDialog.close();
       this._oItemContext.refresh();
       this._oItemContext.requestSideEffects([  //"EqCondition", "Comments",
-        "AuditItemStatus", "AuditItemStatusText", "AuditItemStatusCriticality", "LastChangedAt", "_Change"
+        "AuditItemStatus", "AuditItemStatusText", "AuditItemStatusCriticality", "LastChangedAt", "_Change", "_ExceptionType"
       ]);
     }).catch(oErr => { 
       this._oDialog.setBusy(false);
@@ -275,8 +267,20 @@ _openEditDialog: function (oContext) {
   },
 
   _getInnerTable(){
-    return this.base.getView().byId(this._oItemTable.getId() + "-innerTable")
+    const oTable = this._getItemsTable();
+    if (oTable){
+      return this.base.getView().byId(oTable.getId() + "-innerTable");
+    }
   },
+  _getItemsTable(){
+    const oExtensionAPI = this.base.getExtensionAPI();
+    const sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem"; 
+    //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
+    //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem-innerTable
+    return this.base.byId(sTableId);
+  },
+
+
   onCancelEquipDialog:function(oEvent){
     let oInnerTable = this._getInnerTable();
     if (oInnerTable) {
@@ -443,15 +447,16 @@ _openEditDialog: function (oContext) {
     } else {
         var sBarCode = mResult.text;
         var oExtensionAPI = this.base.getExtensionAPI();
+        var oTable = this._getItemsTable();
 
-        if (this._oItemTable) {
-          var oBinding = this._oItemTable.getRowBinding();
+        if (oTable) {
+          var oBinding = oTable.getRowBinding();
           if (oBinding) {
             var aContexts = oBinding.getCurrentContexts();
             var oMatchedContext = aContexts.find(function (oContext) {
                 return oContext && oContext.getProperty("Equipment") === sBarCode;
             });
-            this._highlightItemRow(oMatchedContext);
+            this._highlightItemRow(oMatchedContext, true);  //open Edit dialog
           }
         } else {
           console.error("Could not find table with ID: " + sTableId);
@@ -459,7 +464,7 @@ _openEditDialog: function (oContext) {
     }
   },
 
-  _highlightItemRow(oContext){
+  _highlightItemRow(oContext, bOpenEditDialog){
     if (oContext) {
       var oData = oContext.getObject();
       MessageToast.show("Found Equipment: " + oData.Equipment);
@@ -487,8 +492,9 @@ _openEditDialog: function (oContext) {
               oTable.setSelectedItem(oRowToSelect, true);
               oTable.fireSelectionChange();
 
-              //Open edit dialog
-              this._openEditDialog(oContext);
+              if (bOpenEditDialog){
+                this._openEditDialog(oContext);
+              }
             }
           }
         }
@@ -531,11 +537,72 @@ _loadManualSearchPopover: function () {
   });
 },
 
+onManualSearchClear(oEvent){
+  const oUIModel = this.getView().getModel("ui");
+  const oTable = this._getItemsTable();
+  const oBinding = oTable.getRowBinding(); 
+  oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
+  oUIModel.setProperty("/filterStar", "");
+
+},
+
 onManualSearchEquipment: function (oEvent) {
+  const sQuery = oEvent.getParameter("query").trim();
+  const oTable = this._getItemsTable();
+  const oBinding = oTable.getRowBinding(); //oTable.getBinding("items");
+  const oUIModel = this.getView().getModel("ui");
+
+  // empty search - clear filter and restore full list
+  if (!sQuery) {
+    oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
+    oUIModel.setProperty("/filterStar", "");
+    return;
+  }
+
+  const sPadded = sQuery.padStart(18, '0');
+
+  oBinding.filter(
+    new Filter({
+      filters: [
+        new Filter("Equipment", FilterOperator.EQ, sPadded),
+        new Filter("EquipmentName", FilterOperator.Contains, sQuery)
+      ],
+      and: false
+    }),
+    FilterType.Application
+  );
+
+  oBinding.attachEventOnce("dataReceived", (oDataEvent) => {
+    const aContexts = oBinding.getCurrentContexts();
+
+    if (aContexts.length === 0) {
+      // clear the filter - no point showing empty table
+      oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
+      oUIModel.setProperty("/filterStar", "");
+      MessageToast.show( "Equipment " + sQuery + " not found in this audit. You can use 'Add Equipment' to search SAP master data."      );
+
+    } else if (aContexts.length === 1) {
+      // exactly one result - select and highlight it
+      this._highlightItemRow(aContexts[0], false);   //do not open Edit dialog
+      MessageToast.show( "Equipment found. Clear the search field to return to the full list." );
+      oUIModel.setProperty("/filterStar", "*");
+      //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem::CustomAction::ManualSearch-content
+
+    } else {
+      // multiple matches (e.g. searched by partial description)
+      // table shows all matching rows, user picks visually
+      MessageToast.show( aContexts.length + " items found. Clear the search to return to full list." );
+      oUIModel.setProperty("/filterStar", "*");
+
+    }
+  });
+},
+
+onManualSearchEquipment_OLD: function (oEvent) { 
   const sQuery = oEvent.getParameter("query").trim();
   if (!sQuery) { return; }
 
-  const oTable = this._oItemTable;
+  const oTable = this._getItemsTable();
   const aContexts = oTable.getRowBinding().getCurrentContexts(); //oTable.getBinding("items").getCurrentContexts();
 
   // normalize - pad to 18 chars to handle user typing "816259" vs "000000000000816259"

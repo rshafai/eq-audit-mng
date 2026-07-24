@@ -13,10 +13,8 @@
           width="16rem"
           enableSuggestions="true"
           search=".onManualSearchEquipment" />
-      <!-- </HBox visible="{ui>/showSearchNotFound}">
-        <Text ></Text>
-      <HBox > -->
       </HBox>
+      <!-- <Button text="Clear" press="onManualSearchClear"></Button> -->
     </content>
   </Popover>
 </core:FragmentDefinition>

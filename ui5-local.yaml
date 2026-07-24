@@ -46,3 +46,8 @@ server:
             generateMockData: true
             resolveExternalServiceReferences: true
         annotations: []
+builder:
+  resources:
+    excludes:
+      - /test/**
+      - /localService/**
