@@ -416,10 +416,124 @@ _openEditDialog: function (oContext) {
   },
 
   
+  
 //────────────────────────────────────────
-// Barcode Scan
+// Barcode Scan - NEW
 //────────────────────────────────────────
-  onBarcodeScan: function (oEvent) {
+  onBarcodeScan_OLD: function (sScannedValue) {
+debugger;
+    this._findEquipmentInAudit(sScannedValue).then(oItem => {
+      if (!oItem) {
+        MessageToast.show( "Equipment " + sScannedValue + " not found in this audit." );
+        return;
+      }
+      this._showFoundEquipmentStrip(oItem);
+    });
+  },
+  _findEquipmentInAudit: function (sEquipment) {
+    const sPadded = sEquipment.padStart(18, '0');
+    const oModel = this.getView().getModel();
+    const oHeaderContext = this.getView().getBindingContext();
+
+    // targeted read - just check if this equipment exists in this audit
+    return oModel.bindList(
+      "_Item",
+      oHeaderContext,
+      [],
+      [ new Filter("Equipment", FilterOperator.EQ, sPadded) ],
+      { $select: "Equipment,ItemNumber,EquipmentName" }
+    ).requestContexts(0, 1).then(aContexts => {
+      if (aContexts.length > 0) {
+        return aContexts[0].getObject();  // found
+      }
+      return null;  // not found
+    });
+  },
+
+  _showFoundEquipmentStrip: function (oItem) {
+    const oStrip = this._getOrCreateMessageStrip();
+    oStrip.setText(
+      "Equipment " + oItem.Equipment.replace(/^0+/, '') +
+      " - " + oItem.EquipmentName + " found in this audit."
+    );
+    oStrip.setVisible(true);
+    this._oFoundItem = oItem;  // store for "Go to" handler
+  },
+
+  onGoToEquipment: function () {
+    if (!this._oFoundItem) { return; }
+    this._scrollToEquipment(this._oFoundItem.Equipment);
+    this._oMessageStrip.setVisible(false);
+    this._oFoundItem = null;
+  },
+
+  _scrollToEquipment: function (sEquipment) {
+    const sPadded = sEquipment.padStart(18, '0');
+    const oTable = this._getItemsTable();
+    const oBinding = oTable.getRowBinding();
+  
+    // check if item is already in loaded contexts
+    const aContexts = oBinding.getCurrentContexts();
+    const nIndex = aContexts.findIndex(oCtx =>
+      oCtx.getProperty("Equipment") === sPadded
+    );
+  
+    if (nIndex >= 0) {
+      // already loaded - just scroll and highlight
+      this._scrollAndHighlight(oTable, nIndex);
+      
+    } else {    
+      // not yet loaded - need to grow the table until we find it
+      this._growUntilFound(oTable, oBinding, sPadded, 0);
+    }
+  },
+
+  _scrollAndHighlight: function (oTable, nIndex) {
+    oTable.scrollToIndex(nIndex);
+  
+    // highlight after a short delay to allow rendering
+    setTimeout(() => {
+      const aItems = oTable.getItems();
+      if (aItems[nIndex]) {
+        this._highlightItemRow(aItems[nIndex].getBindingContext());
+      }
+    }, 300);
+  },
+
+  _growUntilFound: function (oTable, oBinding, sEquipment, nAttempt) {
+    const MAX_ATTEMPTS = 10;  // safety limit
+    if (nAttempt >= MAX_ATTEMPTS) {
+      MessageToast.show("Could not load equipment row — try scrolling to it manually.");
+      return;
+    }
+  
+    // request more contexts
+    const nCurrentLength = oBinding.getLength();
+    oBinding.requestContexts(0, nCurrentLength + 50).then(aContexts => {
+      const nIndex = aContexts.findIndex(oCtx =>
+        oCtx.getProperty("Equipment") === sEquipment
+      );
+  
+      if (nIndex >= 0) {
+        this._scrollAndHighlight(oTable, nIndex);
+
+      } else if (aContexts.length < nCurrentLength + 50) {
+        // fetched all available rows, still not found
+        MessageToast.show("Equipment loaded but row could not be located.");
+      } else {
+        // more rows available, keep growing
+        this._growUntilFound(oTable, oBinding, sEquipment, nAttempt + 1);
+      }
+    });
+  },
+
+
+
+
+//────────────────────────────────────────
+// Barcode Scan - Client search
+//────────────────────────────────────────
+  onBarcodeScan_OLD: function (oEvent) {
     debugger;
        BarcodeScanner.scan(
         function (mResult) {

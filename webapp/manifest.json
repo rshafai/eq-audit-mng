@@ -163,6 +163,9 @@
               "editableHeaderContent": false,
               "controlConfiguration": {
                 "_AuditItems/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "enableSearch": true 
+                  },
                   "navigation": {
                     "to_YourItemEntity": {
                       "type": "custom"
