@@ -62,7 +62,7 @@
                 type: 'sap.ui.model.odata.type.String',
                 constraints: { isDigitSequence: true, maxLength: 3 }
               }"
-              text="{Text} ({Value})" />
+              text="{Text}" />
           </Select>
         <!-- </VBox> 
         <VBox width="100%">  -->
@@ -71,10 +71,10 @@
 
           <Label text="Exception" class="sapUiTinyMarginTop" />
           <Select
-            valueState="{= (${dlg>/exceptionType}>'000')?'Warning':'Success' }"
+            valueState="{= (${dlg>/ExceptionType}>'000')?'Warning':'Success' }"
             valueStateText="  "
             selectedKey="{
-              path: 'dlg>/exceptionType',
+              path: 'dlg>/ExceptionType',
               type: 'sap.ui.model.odata.type.String',
               constraints: { maxLength: 3 }
             }"
@@ -86,7 +86,7 @@
         <!-- </VBox>     
       </HBox>  -->
 
-      <Table items="{dlg>/fields}" growing="true" class="sapUiSmallMarginBottom sapUiSmallMarginTop">
+      <Table items="{dlg>/fields}" growing="false" visible="{= !(${dlg>/ExceptionType}==='030')}" class="sapUiSmallMarginBottom sapUiSmallMarginTop">
         <columns>
           <Column><Text text="Field" /></Column>
           <Column><Text text="Current Value" /></Column>

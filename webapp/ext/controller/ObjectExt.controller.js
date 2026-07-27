@@ -42,7 +42,11 @@ sap.ui.define([
               });
               this.getView().setModel(oUIModel, "ui");
             },
+            onAfterRendering(){
+            },
+
             routing: {
+
               onBeforeNavigation: function (oContext, oNavigationParameters) {
                 var oRowData = oContext.getObject();
                 if (oRowData.Status === "Blocked") {
@@ -55,7 +59,16 @@ sap.ui.define([
 debugger;
                 var oTable = this._getItemsTable();
                 if (oTable) {
+                  //Selection change event
                   oTable.attachSelectionChange(this.onTableSelectionChange, this);
+
+                  //Data received event
+                  var oRowBinding = oTable.getRowBinding();
+                  if (oRowBinding) {
+                    oRowBinding.attachEvent("dataReceived", this._onTableDataReceived, this);
+                  }
+
+                  //Initialize table
                   oTable.removeSelections(true);
                   oTable.fireSelectionChange();
                 }
@@ -85,6 +98,26 @@ debugger;
       oUiModel.setProperty("/showEdit", showEdit);
       oUiModel.setProperty("/showApprove", showApprove);
   },
+
+  _onTableDataReceived: function (oEvent) {
+    var oRowBinding = oEvent.getSource();
+debugger;    
+    // 1. Check if the user actually typed something in the Search Field
+    // OData V4 stores the active text search query in its change parameters
+    const sSearchQuery = oRowBinding.getDownloadUrl() ? new URL(oRowBinding.getDownloadUrl(), window.location.origin).searchParams.get("$search") : null;
+    if (sSearchQuery) {
+        // 2. Identify if the search returned no results
+        if (oRowBinding.getLength() === 0) {
+console.log("Search unsuccessful" + sSearchQuery);
+          // 3. Search is unsuccessful! Trigger your secondary search logic
+          //  this._triggerExternalEquipmentSearch(sSearchQuery);
+        }
+    }
+},
+
+
+
+
 
 //────────────────────────────────────────
 // Edit Dialog
@@ -418,26 +451,16 @@ _openEditDialog: function (oContext) {
   
   
 //────────────────────────────────────────
-// Barcode Scan - NEW
+// Barcode Scan - Server side search
 //────────────────────────────────────────
-  onBarcodeScan_OLD: function (sScannedValue) {
-debugger;
-    this._findEquipmentInAudit(sScannedValue).then(oItem => {
-      if (!oItem) {
-        MessageToast.show( "Equipment " + sScannedValue + " not found in this audit." );
-        return;
-      }
-      this._showFoundEquipmentStrip(oItem);
-    });
-  },
   _findEquipmentInAudit: function (sEquipment) {
     const sPadded = sEquipment.padStart(18, '0');
     const oModel = this.getView().getModel();
     const oHeaderContext = this.getView().getBindingContext();
 
-    // targeted read - just check if this equipment exists in this audit
+    // targeted read - check if this equipment exists in this audit
     return oModel.bindList(
-      "_Item",
+      "_AuditItems",
       oHeaderContext,
       [],
       [ new Filter("Equipment", FilterOperator.EQ, sPadded) ],
@@ -446,24 +469,14 @@ debugger;
       if (aContexts.length > 0) {
         return aContexts[0].getObject();  // found
       }
-      return null;  // not found
+      MessageToast.show( "Equipment " + sEquipment + " not found in this audit." );
     });
-  },
-
-  _showFoundEquipmentStrip: function (oItem) {
-    const oStrip = this._getOrCreateMessageStrip();
-    oStrip.setText(
-      "Equipment " + oItem.Equipment.replace(/^0+/, '') +
-      " - " + oItem.EquipmentName + " found in this audit."
-    );
-    oStrip.setVisible(true);
-    this._oFoundItem = oItem;  // store for "Go to" handler
   },
 
   onGoToEquipment: function () {
     if (!this._oFoundItem) { return; }
     this._scrollToEquipment(this._oFoundItem.Equipment);
-    this._oMessageStrip.setVisible(false);
+    // this._oMessageStrip.setVisible(false);
     this._oFoundItem = null;
   },
 
@@ -531,9 +544,9 @@ debugger;
 
 
 //────────────────────────────────────────
-// Barcode Scan - Client search
+// Barcode Scan 
 //────────────────────────────────────────
-  onBarcodeScan_OLD: function (oEvent) {
+  onBarcodeScan: function (oEvent) {
     debugger;
        BarcodeScanner.scan(
         function (mResult) {
@@ -559,23 +572,53 @@ debugger;
     if (mResult.cancelled) {
         MessageToast.show("Scan cancelled", { duration: 1000 });
     } else {
-        var sBarCode = mResult.text;
-        var oExtensionAPI = this.base.getExtensionAPI();
-        var oTable = this._getItemsTable();
+      var sEquipment = mResult.text;
+      var oExtensionAPI = this.base.getExtensionAPI();
+      var oTable = this._getItemsTable();
 
-        if (oTable) {
-          var oBinding = oTable.getRowBinding();
-          if (oBinding) {
-            var aContexts = oBinding.getCurrentContexts();
-            var oMatchedContext = aContexts.find(function (oContext) {
-                return oContext && oContext.getProperty("Equipment") === sBarCode;
-            });
-            this._highlightItemRow(oMatchedContext, true);  //open Edit dialog
-          }
-        } else {
-          console.error("Could not find table with ID: " + sTableId);
+      // 1. Search alredy loaded table first
+      if (oTable) {
+        var oBinding = oTable.getRowBinding();
+        if (oBinding) {
+          var aContexts = oBinding.getCurrentContexts();
+          var oMatchedContext = aContexts.find(function (oContext) {
+              return oContext && oContext.getProperty("Equipment") === sEquipment;
+          });
         }
+      } 
+      if (oMatchedContext){
+        //already loaded
+        this._highlightItemRow(oMatchedContext, true);  //open Edit dialog
+
+      } else {
+        // 2. Search on server
+        this._findEquipmentInAudit(sEquipment).then(oItem => {
+          if (!oItem) {
+            MessageToast.show( "Equipment " + sEquipment + " not found in SAP." );
+          } else {
+            this._showFoundEquipmentStrip(oItem);
+          }
+        });
+
+      }
     }
+  },
+
+  _showFoundEquipmentStrip: function (oItem) {
+    const sDisplayEquip = oItem.Equipment.replace(/^0+/, '');
+    MessageBox.information(
+      "Equipment " + sDisplayEquip + " - " + oItem.EquipmentName +
+      " was found in this audit.",
+      {
+        title: "Equipment Found",
+        actions: ["Go to Equipment", MessageBox.Action.CLOSE],
+        onClose: (sAction) => {
+          if (sAction === "Go to Equipment") {
+            this._scrollToEquipment(oItem.Equipment);
+          }
+        }
+      }
+    );
   },
 
   _highlightItemRow(oContext, bOpenEditDialog){
@@ -623,119 +666,119 @@ debugger;
 //────────────────────────────────────────
 // Manual Search
 //────────────────────────────────────────
-onManualSearchButtonPress: function (oContext, aSelectedContexts) {
-  this._loadManualSearchPopover().then(oPopover => {
-    const sButtonId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem::CustomAction::ManualSearch";
-    const oButton = sap.ui.getCore().byId(sButtonId);
+// onManualSearchButtonPress: function (oContext, aSelectedContexts) {
+//   this._loadManualSearchPopover().then(oPopover => {
+//     const sButtonId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem::CustomAction::ManualSearch";
+//     const oButton = sap.ui.getCore().byId(sButtonId);
 
-    if (oButton) {
-      oPopover.openBy(oButton);
-    } else {
-      oPopover.openBy(this.base.getView());
-    }
-  });
-},
+//     if (oButton) {
+//       oPopover.openBy(oButton);
+//     } else {
+//       oPopover.openBy(this.base.getView());
+//     }
+//   });
+// },
 
-_loadManualSearchPopover: function () {
-  if (this._oManualSearchPopover) {
-    return Promise.resolve(this._oManualSearchPopover);
-  }
-  return Fragment.load({
-    id: this.getView().getId(),
-    name: this._fragmentPrefix + "ManualSearchPopover",
-    controller: this
-  }).then(oPopover => {
-    this._oManualSearchPopover = oPopover;
-    this.getView().addDependent(oPopover);
-    return oPopover;
-  });
-},
+// _loadManualSearchPopover: function () {
+//   if (this._oManualSearchPopover) {
+//     return Promise.resolve(this._oManualSearchPopover);
+//   }
+//   return Fragment.load({
+//     id: this.getView().getId(),
+//     name: this._fragmentPrefix + "ManualSearchPopover",
+//     controller: this
+//   }).then(oPopover => {
+//     this._oManualSearchPopover = oPopover;
+//     this.getView().addDependent(oPopover);
+//     return oPopover;
+//   });
+// },
 
-onManualSearchClear(oEvent){
-  const oUIModel = this.getView().getModel("ui");
-  const oTable = this._getItemsTable();
-  const oBinding = oTable.getRowBinding(); 
-  oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
-  oUIModel.setProperty("/filterStar", "");
+// onManualSearchClear(oEvent){
+//   const oUIModel = this.getView().getModel("ui");
+//   const oTable = this._getItemsTable();
+//   const oBinding = oTable.getRowBinding(); 
+//   oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
+//   oUIModel.setProperty("/filterStar", "");
 
-},
+// },
 
-onManualSearchEquipment: function (oEvent) {
-  const sQuery = oEvent.getParameter("query").trim();
-  const oTable = this._getItemsTable();
-  const oBinding = oTable.getRowBinding(); //oTable.getBinding("items");
-  const oUIModel = this.getView().getModel("ui");
+// onManualSearchEquipment: function (oEvent) {
+//   const sQuery = oEvent.getParameter("query").trim();
+//   const oTable = this._getItemsTable();
+//   const oBinding = oTable.getRowBinding(); //oTable.getBinding("items");
+//   const oUIModel = this.getView().getModel("ui");
 
-  // empty search - clear filter and restore full list
-  if (!sQuery) {
-    oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
-    oUIModel.setProperty("/filterStar", "");
-    return;
-  }
+//   // empty search - clear filter and restore full list
+//   if (!sQuery) {
+//     oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
+//     oUIModel.setProperty("/filterStar", "");
+//     return;
+//   }
 
-  const sPadded = sQuery.padStart(18, '0');
+//   const sPadded = sQuery.padStart(18, '0');
 
-  oBinding.filter(
-    new Filter({
-      filters: [
-        new Filter("Equipment", FilterOperator.EQ, sPadded),
-        new Filter("EquipmentName", FilterOperator.Contains, sQuery)
-      ],
-      and: false
-    }),
-    FilterType.Application
-  );
+//   oBinding.filter(
+//     new Filter({
+//       filters: [
+//         new Filter("Equipment", FilterOperator.EQ, sPadded),
+//         new Filter("EquipmentName", FilterOperator.Contains, sQuery)
+//       ],
+//       and: false
+//     }),
+//     FilterType.Application
+//   );
 
-  oBinding.attachEventOnce("dataReceived", (oDataEvent) => {
-    const aContexts = oBinding.getCurrentContexts();
+//   oBinding.attachEventOnce("dataReceived", (oDataEvent) => {
+//     const aContexts = oBinding.getCurrentContexts();
 
-    if (aContexts.length === 0) {
-      // clear the filter - no point showing empty table
-      oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
-      oUIModel.setProperty("/filterStar", "");
-      MessageToast.show( "Equipment " + sQuery + " not found in this audit. You can use 'Add Equipment' to search SAP master data."      );
+//     if (aContexts.length === 0) {
+//       // clear the filter - no point showing empty table
+//       oBinding.filter([], FilterType.Application);  //FilterType.Application (instead of FilterType.Control) ensures filter coexists with any existing Fiori Elements-managed filters
+//       oUIModel.setProperty("/filterStar", "");
+//       MessageToast.show( "Equipment " + sQuery + " not found in this audit. You can use 'Add Equipment' to search SAP master data."      );
 
-    } else if (aContexts.length === 1) {
-      // exactly one result - select and highlight it
-      this._highlightItemRow(aContexts[0], false);   //do not open Edit dialog
-      MessageToast.show( "Equipment found. Clear the search field to return to the full list." );
-      oUIModel.setProperty("/filterStar", "*");
-      //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem::CustomAction::ManualSearch-content
+//     } else if (aContexts.length === 1) {
+//       // exactly one result - select and highlight it
+//       this._highlightItemRow(aContexts[0], false);   //do not open Edit dialog
+//       MessageToast.show( "Equipment found. Clear the search field to return to the full list." );
+//       oUIModel.setProperty("/filterStar", "*");
+//       //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem::CustomAction::ManualSearch-content
 
-    } else {
-      // multiple matches (e.g. searched by partial description)
-      // table shows all matching rows, user picks visually
-      MessageToast.show( aContexts.length + " items found. Clear the search to return to full list." );
-      oUIModel.setProperty("/filterStar", "*");
+//     } else {
+//       // multiple matches (e.g. searched by partial description)
+//       // table shows all matching rows, user picks visually
+//       MessageToast.show( aContexts.length + " items found. Clear the search to return to full list." );
+//       oUIModel.setProperty("/filterStar", "*");
 
-    }
-  });
-},
+//     }
+//   });
+// },
 
-onManualSearchEquipment_OLD: function (oEvent) { 
-  const sQuery = oEvent.getParameter("query").trim();
-  if (!sQuery) { return; }
+// onManualSearchEquipment_OLD: function (oEvent) { 
+//   const sQuery = oEvent.getParameter("query").trim();
+//   if (!sQuery) { return; }
 
-  const oTable = this._getItemsTable();
-  const aContexts = oTable.getRowBinding().getCurrentContexts(); //oTable.getBinding("items").getCurrentContexts();
+//   const oTable = this._getItemsTable();
+//   const aContexts = oTable.getRowBinding().getCurrentContexts(); //oTable.getBinding("items").getCurrentContexts();
 
-  // normalize - pad to 18 chars to handle user typing "816259" vs "000000000000816259"
-  const sPadded = sQuery.padStart(18, '0');
+//   // normalize - pad to 18 chars to handle user typing "816259" vs "000000000000816259"
+//   const sPadded = sQuery.padStart(18, '0');
 
-  const oMatchContext = aContexts.find(oCtx => {
-    const sEquipment = oCtx.getProperty("Equipment");
-    return sEquipment === sPadded || sEquipment === sQuery;
-  });
+//   const oMatchContext = aContexts.find(oCtx => {
+//     const sEquipment = oCtx.getProperty("Equipment");
+//     return sEquipment === sPadded || sEquipment === sQuery;
+//   });
 
-  if (oMatchContext) {
-    this._oManualSearchPopover.close();
-    this._highlightItemRow(oMatchContext);
-  } else {
-    MessageToast.show(
-      "Equipment " + sQuery + " not found in this audit. You can use 'Add Equipment' to search SAP master data."
-    );
-  }
-},
+//   if (oMatchContext) {
+//     this._oManualSearchPopover.close();
+//     this._highlightItemRow(oMatchContext);
+//   } else {
+//     MessageToast.show(
+//       "Equipment " + sQuery + " not found in this audit. You can use 'Add Equipment' to search SAP master data."
+//     );
+//   }
+// },
 
 
 //────────────────────────────────────────
