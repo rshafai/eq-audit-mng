@@ -204,14 +204,27 @@
                         "anchor": "BarcodeScan"
                       }
                     },
-                    "NotInSAP": {
-                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onNotInSAPPress",
-                      "text": "Report an Exception",
-                      "enabled": true,
+                    "ClearSearchFilterAction": {
+                      "text": "Refresh",
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onClearSearchFilter",
+                      "requiresSelection": false,
+                      "visible": true,
+                      "icon": "sap-icon://refresh" ,
                       "position": {
-                        "placement": "After",
-                        "anchor": "AddEquipment"
+                        "placement": "Before",
+                        "anchor": "EditItem"
                       }
+                    } 
+                  }
+                },
+                "_AuditException/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "actions": {
+                    "AddException": {
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onNotInSAPPress",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "text": "Add Exception"
                     }
                   }
                 }
