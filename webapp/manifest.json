@@ -216,17 +216,6 @@
                       }
                     } 
                   }
-                },
-                "_AuditException/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "actions": {
-                    "AddException": {
-                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onNotInSAPPress",
-                      "visible": true,
-                      "enabled": true,
-                      "requiresSelection": false,
-                      "text": "Add Exception"
-                    }
-                  }
                 }
               }
             }

@@ -262,9 +262,17 @@ _openEditDialog: function (oContext) {
 
     const oModel = this.getView().getModel();
     const oItemContext = this._oItemContext;
-    const sEquipment  = this._oDialogModel.getProperty("/Equipment");     //oItemContext.getProperty("Equipment");
+    const sException  = this._oDialogModel.getProperty("/ExceptionType");     
+    const sComments   = this._oDialogModel.getProperty("/Comments");     
+    const sEquipment  = this._oDialogModel.getProperty("/Equipment");   
     const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges";
   
+    //Validations
+    if (sException && !sComments) {
+      MessageBox.error( "Comments are required when an Exception Type is selected." );
+      return;  
+    }
+
     const buildSingleCall = (fieldName, oldValue, newValue, equipField, bApproveFlag) => {
       return this.base.editFlow.securedExecution(
         () => {
@@ -275,8 +283,8 @@ _openEditDialog: function (oContext) {
           oBinding.setParameter("EquipField",     equipField  || "");
           oBinding.setParameter("Equipment",      sEquipment  || "");
           oBinding.setParameter("EqCondition",    this._oDialogModel.getProperty("/EqCondition")  || "");
-          oBinding.setParameter("Comments",       this._oDialogModel.getProperty("/Comments")   || "");
-          oBinding.setParameter("ExceptionType",  this._oDialogModel.getProperty("/ExceptionType")  || "");
+          oBinding.setParameter("Comments",       sComments   || "");
+          oBinding.setParameter("ExceptionType",  sException  || "");
           oBinding.setParameter("Approve",        !!bApproveFlag);
           return oBinding.execute();
         },
