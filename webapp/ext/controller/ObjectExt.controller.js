@@ -268,7 +268,7 @@ _openEditDialog: function (oContext) {
     const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges";
   
     //Validations
-    if (sException && !sComments) {
+    if (sException && sException !=='000' && !sComments) {
       MessageBox.error( "Comments are required when an Exception Type is selected." );
       return;  
     }
@@ -410,10 +410,9 @@ _openEditDialog: function (oContext) {
     this._oActiveVHRowContext = null;
   },
 
-  
-//-------------------------------------------------------------------
-// Approve Items
-//-------------------------------------------------------------------
+//────────────────────────────────────────  
+// Approve Multiple Items
+//────────────────────────────────────────
   onApproveItems: function (oEvent, aContexts) {
     if (!aContexts) { return; }
     if (aContexts.length === 0) {
@@ -442,16 +441,21 @@ _openEditDialog: function (oContext) {
   
   _executeBulkApprove: function (aContexts) {
     const oModel = this.getView().getModel();
+    const oHeaderContext = this.getView().getBindingContext();
+
     const aCalls = aContexts.map(oCtx => {
       const oBinding = oModel.bindContext(
-        "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.approveItems(...)",
-        oCtx
+                          "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.approveItems(...)",
+                          oCtx
       );
-      return oBinding.execute().then(() => oCtx.requestSideEffects(["AuditItemStatus"]));
+      return oBinding.execute();  //.then(() => oCtx.requestSideEffects(["AuditItemStatus"]));
     });
-  
     Promise.all(aCalls).then(() => {
       MessageToast.show("Items approved.");
+      oHeaderContext.requestSideEffects([
+        "_AuditItems",
+        "AuditHeaderStatus"   // also refresh header status since approveItems may trigger setHeaderInProcess
+      ]);
     }).catch(oErr => {
       MessageBox.error("Approval failed: " + oErr.message);
     });
@@ -481,13 +485,6 @@ _openEditDialog: function (oContext) {
       MessageToast.show( "Equipment " + sEquipment + " not found in this audit." );
     });
   },
-
-  // onGoToEquipment: function () {
-  //   if (!this._oFoundItem) { return; }
-  //   this._scrollToEquipment(this._oFoundItem.Equipment);
-  //   // this._oMessageStrip.setVisible(false);
-  //   this._oFoundItem = null;
-  // },
 
   _scrollToEquipment: function (sEquipment) {
 //    const sPadded = sEquipment.padStart(18, '0');
@@ -825,40 +822,44 @@ onMasterSearchCancel: function (oEvent) {
 
 
 _addEquipmentToAudit: function (sEquipment) {
-  // validate against master (already confirmed it exists since we picked from master search)
-  // and create a new audit item
   const oHeaderContext = this.getView().getBindingContext();
   const oModel = this.getView().getModel();
 
-  this.base.editFlow.securedExecution(
-    () => {
-      const oListBinding = oModel.bindList(
-                                "_AuditItems",
-                                oHeaderContext,
-                                [], [],
-                                { $$updateGroupId: "$auto" }
-      );
-      // create() returns a Context synchronously
-      const oNewItemContext = oListBinding.create({
-                                Equipment: sEquipment
-                                // AuditDocId not needed - derived from parent context by the framework
-      });
+  this.getView().setBusy(true);
 
-      // .created() returns a Promise that resolves when the backend POST completes
-      return oNewItemContext.created();
-    },
-    {
-      updatableObject: oHeaderContext,
-      busyControl: this.getView()
+  const oListBinding = oModel.bindList(
+    "_AuditItems",
+    oHeaderContext,
+    [], [],
+    { $$updateGroupId: "$auto" }
+  );
+
+  // attach createCompleted BEFORE calling create
+  // this is the official documented way to handle create errors in V4
+  oListBinding.attachEventOnce("createCompleted", (oEvent) => {
+    const bSuccess = oEvent.getParameter("success");
+    this.getView().setBusy(false);
+
+    if (bSuccess) {
+      MessageToast.show("Equipment " + sEquipment + " added to audit.");
+      oHeaderContext.requestSideEffects(["_AuditItems"]);
+    } else {
+      // delete the failed transient context to stop retry loop
+      oNewItemContext.delete("$auto").catch(() => {});
+
+      // error message is already in the MessageManager - show it
+      const aMessages = sap.ui.getCore().getMessageManager().getMessageModel().getData();
+      const oError = aMessages.filter(m => m.type === "Error").pop();
+
+      MessageBox.error( oError ? oError.message : "Could not add equipment." );
     }
-  ).then(() => {
-    MessageToast.show("Equipment " + sEquipment + " added to audit.");
-    this._refreshItemTable();
+  });
 
-  }).catch(oErr => {
-    MessageBox.error("Could not add equipment: " + oErr.message);
+  const oNewItemContext = oListBinding.create({
+    Equipment: sEquipment
   });
 },
+
 
 _refreshItemTable: function () {
   const oHeaderContext = this.getView().getBindingContext();
