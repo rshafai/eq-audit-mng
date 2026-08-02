@@ -462,92 +462,6 @@ _openEditDialog: function (oContext) {
   },
 
   
-  
-//────────────────────────────────────────
-// Barcode Scan - Server side search
-//────────────────────────────────────────
-  _findEquipmentInAudit: function (sEquipment) {
-    const sPadded = sEquipment.padStart(18, '0');
-    const oModel = this.getView().getModel();
-    const oHeaderContext = this.getView().getBindingContext();
-
-    // targeted read - check if this equipment exists in this audit
-    return oModel.bindList(
-      "_AuditItems",
-      oHeaderContext,
-      [],
-      [ new Filter("Equipment", FilterOperator.EQ, sPadded) ],
-      { $select: "Equipment,ItemNumber,EquipmentName" }
-    ).requestContexts(0, 1).then(aContexts => {
-      if (aContexts.length > 0) {
-        return aContexts[0].getObject();  // found
-      }
-      MessageToast.show( "Equipment " + sEquipment + " not found in this audit." );
-    });
-  },
-
-  _scrollToEquipment: function (sEquipment) {
-//    const sPadded = sEquipment.padStart(18, '0');
-    const oTable = this._getItemsTable();
-    const oBinding = oTable.getRowBinding();
-  
-    // check if item is already in loaded contexts
-    const aContexts = oBinding.getCurrentContexts();
-    const nIndex = aContexts.findIndex(oCtx =>
-      oCtx.getProperty("Equipment") === sEquipment
-    );
-  
-    if (nIndex >= 0) {
-      // already loaded - just scroll and highlight
-      this._scrollAndHighlight(oTable, nIndex);
-      
-    } else {    
-      // not yet loaded - need to grow the table until we find it
-      this._growUntilFound(oTable, oBinding, sEquipment, 0);
-    }
-  },
-
-  _scrollAndHighlight: function (oTable, nIndex) {
-    oTable.scrollToIndex(nIndex);
-  
-    // highlight after a short delay to allow rendering
-    setTimeout(() => {
-      const oTable = this._getInnerTable();
-      const aItems = oTable.getItems();
-      if (aItems[nIndex]) {
-        this._highlightItemRow(aItems[nIndex].getBindingContext());
-      }
-    }, 300);
-  },
-
-  _growUntilFound: function (oTable, oBinding, sEquipment, nAttempt) {
-    const MAX_ATTEMPTS = 10;  // safety limit
-    if (nAttempt >= MAX_ATTEMPTS) {
-      MessageToast.show("Could not load equipment row — try scrolling to it manually.");
-      return;
-    }
-  
-    // request more contexts
-    const nCurrentLength = oBinding.getLength();
-    oBinding.requestContexts(0, nCurrentLength + 20).then(aContexts => {
-      const nIndex = aContexts.findIndex(oCtx =>
-        oCtx.getProperty("Equipment") === sEquipment
-      );
-  
-      if (nIndex >= 0) {
-        this._scrollAndHighlight(oTable, nIndex);
-
-      } else if (aContexts.length < nCurrentLength + 50) {
-        // fetched all available rows, still not found
-        MessageToast.show("Equipment loaded but row could not be located.");
-      } else {
-        // more rows available, keep growing
-        this._growUntilFound(oTable, oBinding, sEquipment, nAttempt + 1);
-      }
-    });
-  },
-
-
 
 
 //────────────────────────────────────────
@@ -598,15 +512,6 @@ _openEditDialog: function (oContext) {
 
       } else {
         this._triggerSearch(sEquipment);
-        // // 2. Search on server
-        // this._findEquipmentInAudit(sEquipment).then(oItem => {
-        //   if (!oItem) {
-        //     MessageToast.show( "Equipment " + sEquipment + " not found in SAP." );
-        //   } else {
-        //     this._showFoundEquipmentStrip(oItem);
-        //   }
-        // });
-
       }
     }
   },
@@ -670,7 +575,7 @@ _openEditDialog: function (oContext) {
 
   
 //────────────────────────────────────────
-// Search for Equipment
+// Search for Equipment - Server side
 //────────────────────────────────────────
 _triggerSearch: function(sEquipment){
   //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem::StandardAction::BasicSearch
@@ -684,29 +589,7 @@ _triggerSearch: function(sEquipment){
 
       //Force trigger search
       oRowBinding.changeParameters({ "$search": sEquipment});  //force trigger search 
-      // var sWrapperId = "gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem::StandardAction::BasicSearch";
-      // var oWrapperControl = this.getView().byId(sWrapperId) || sap.ui.getCore().byId(sWrapperId);
       
-      // if (oWrapperControl) {
-      //     // Wait for one rendering frame to ensure the HTML DOM is accessible
-      //     window.requestAnimationFrame(function() {
-      //       var oHtmlElement = document.getElementById(oWrapperControl.getId());
-        
-      //       if (oHtmlElement) {
-      //           // Find any <input> tags nested inside the Fiori wrapper component
-      //           var aInputs = oHtmlElement.getElementsByTagName("input");
-                
-      //           if (aInputs.length > 0) {
-      //               aInputs[0].value = sEquipment;
-                    
-      //               // Optional: Update the internal control state if accessible
-      //               if (typeof oWrapperControl.setValue === "function") {
-      //                   oWrapperControl.setValue(sEquipment);
-      //               }
-      //           }
-      //       }
-      //     });
-      // }
     }
 },
 
@@ -750,6 +633,109 @@ onClearSearchFilter: function (oEvent, aContexts)  {
         });
         MessageToast.show("Table filters reset successfully.");
   }
+},
+
+
+isPostToEMREnabled: function(oContext) {
+  debugger;
+  // Return false if context isn't loaded yet
+  if (!oContext) {
+      return false;
+  }
+
+  // Extract the AuditStatus field from the current OData record
+  var sStatus = oContext.getProperty("AuditStatus");
+
+  // Disable button (return false) if status is COMPLETE, DELETED, or NEW
+  if (sStatus === "040" || sStatus === "050" || sStatus === "010") {
+      return false;
+  }
+
+  // Enable button for all other statuses
+  return true;
+},
+//────────────────────────────────────────
+// Post to EMR, Complete Audit Header
+//────────────────────────────────────────
+onPostAuditDocument: function (oContext) {
+  const oHeaderContext = this.getView().getBindingContext();
+  const oModel = this.getView().getModel();
+  const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.completeAudit";
+
+  this.getView().setBusy(true);
+
+  const oItemsBinding = oModel.bindList(
+    "_AuditItems",
+    oHeaderContext,
+    [],
+    [ new Filter("AuditItemStatus", FilterOperator.EQ, "030") ]
+  );
+  
+  oItemsBinding.requestContexts(0, 999).then(aContexts => {
+    this.getView().setBusy(false);
+    const nCount = aContexts.length;
+  
+    const sConfirmText = ( nCount === 0 )
+      ? "No items are in Audited status.\n\n"
+      : nCount === 1
+        ? "1 item is in Audited status and will be processed.\n\nDo you want to post to Equipment Master?"
+        : `${nCount} items are in Audited status and will be processed.\n\nDo you want to post to Equipment Master?`;
+  
+    MessageBox.confirm(sConfirmText, {
+      title: "Confirm Post to Equipment Master",
+      actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+      emphasizedAction: MessageBox.Action.OK,
+      onClose: (sAction) => {
+        if (sAction !== MessageBox.Action.OK) { return; }
+        if (nCount > 0){
+          this._executePostToEMR();
+        }
+      }
+    });
+  }).catch(() => {
+    this.getView().setBusy(false);
+    MessageBox.error("Could not retrieve audit item information.");
+  });
+},
+
+_executePostToEMR: function () {
+  const oHeaderContext = this.getView().getBindingContext();
+  const oModel = this.getView().getModel();
+  const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.completeAudit";
+
+  this.base.editFlow.securedExecution(
+    () => {
+      const oBinding = oModel.bindContext(
+        sActionName + "(...)",
+        oHeaderContext
+      );
+      return oBinding.execute().then(() => {
+        const oBoundCtx = oBinding.getBoundContext();
+        return oBoundCtx ? oBoundCtx.requestObject() : null;
+      });
+    },
+    {
+      updatableObject: oHeaderContext,
+      busyControl: this.getView()
+    }
+  ).then((oResult) => {
+    const sMessage = oResult && oResult.Message
+      ? oResult.Message
+      : "Post to Equipment Master completed.";
+
+    MessageBox.success(sMessage, {
+      title: "Post to Equipment Master"
+    });
+
+    oHeaderContext.requestSideEffects([
+      "AuditHeaderStatus",
+      "_AuditItems"
+    ]);
+  }).catch(oErr => {
+    MessageBox.error(
+      oErr.message || "Post to Equipment Master failed."
+    );
+  });
 },
 
 //────────────────────────────────────────

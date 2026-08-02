@@ -13,6 +13,27 @@
     </edmx:Reference>
     <edmx:DataServices>
         <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="local">
+            <!-- Not used, moved the button to UI action button 
+            <Annotations Target="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.completeAudit">
+                <Annotation Term="Common.IsActionCritical" Bool="true"/>
+            </Annotations> -->
+
+            <!-- <Annotations Target="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.completeAudit">
+                <Annotation Term="Common.SideEffects">
+                    <Record Type="Common.SideEffectsType">
+                    <PropertyValue Property="TargetProperties">
+                        <Collection>
+                        <String>AuditStatus</String>
+                        </Collection>
+                    </PropertyValue>
+                    <PropertyValue Property="TargetEntities">
+                        <Collection>
+                        <NavigationPropertyPath>_AuditItems</NavigationPropertyPath>
+                        </Collection>
+                    </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations> -->
         </Schema>
     </edmx:DataServices>
 </edmx:Edmx>

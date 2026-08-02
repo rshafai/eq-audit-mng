@@ -53,23 +53,23 @@
             <Annotation Term="SAP__core.SchemaVersion" String="1.0.0"/>
             <EntityType Name="ZQMM_I_LocationType">
                 <Key>
-                    <PropertyRef Name="Location"/>
-                    <PropertyRef Name="Plant"/>
+                    <PropertyRef Name="AssetLocation"/>
+                    <PropertyRef Name="MaintPlant"/>
                 </Key>
-                <Property Name="Location" Type="Edm.String" Nullable="false" MaxLength="10"/>
-                <Property Name="Plant" Type="Edm.String" Nullable="false" MaxLength="4"/>
+                <Property Name="AssetLocation" Type="Edm.String" Nullable="false" MaxLength="10"/>
+                <Property Name="MaintPlant" Type="Edm.String" Nullable="false" MaxLength="4"/>
                 <Property Name="AddressID" Type="Edm.String" Nullable="false" MaxLength="10"/>
                 <Property Name="LocationName" Type="Edm.String" Nullable="false" MaxLength="40"/>
             </EntityType>
             <EntityContainer Name="Container">
                 <EntitySet Name="ZQMM_I_Location" EntityType="com.sap.gateway.srvd_f4.zqmm_i_location.v0001.ZQMM_I_LocationType"/>
             </EntityContainer>
-            <Annotations Target="SAP__self.ZQMM_I_LocationType/Location">
+            <Annotations Target="SAP__self.ZQMM_I_LocationType/AssetLocation">
                 <Annotation Term="SAP__common.Text" Path="LocationName"/>
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Location"/>
             </Annotations>
-            <Annotations Target="SAP__self.ZQMM_I_LocationType/Plant">
+            <Annotations Target="SAP__self.ZQMM_I_LocationType/MaintPlant">
                 <Annotation Term="SAP__common.IsUpperCase"/>
                 <Annotation Term="SAP__common.Label" String="Plant"/>
                 <Annotation Term="SAP__common.Heading" String="Plnt"/>
@@ -88,11 +88,11 @@
                             <Collection>
                                 <Record Type="SAP__common.ValueListParameterInOut">
                                     <PropertyValue Property="LocalDataProperty" PropertyPath="Location"/>
-                                    <PropertyValue Property="ValueListProperty" String="Location"/>
+                                    <PropertyValue Property="ValueListProperty" String="AssetLocation"/>
                                 </Record>
                                 <Record Type="SAP__common.ValueListParameterInOut">
                                     <PropertyValue Property="LocalDataProperty" PropertyPath="MaintPlant"/>
-                                    <PropertyValue Property="ValueListProperty" String="Plant"/>
+                                    <PropertyValue Property="ValueListProperty" String="MaintPlant"/>
                                 </Record>
                                 <Record Type="SAP__common.ValueListParameterDisplayOnly">
                                     <PropertyValue Property="ValueListProperty" String="AddressID"/>

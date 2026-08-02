@@ -161,10 +161,25 @@
             "settings": {
               "entitySet": "ZQMM_C_Audit_Header",
               "editableHeaderContent": false,
+              "enhanceI18n": "i18n/i18n.properties",
+              "content": {
+                "header": {
+                  "actions": {
+                    "PostAuditDocument": {
+                      "text": "Post to EMR {isSupervisor} {isCompletable}",
+                      "type": "Emphasized",
+                      "requiresSelection": true,
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onPostAuditDocument",
+                      "visible": "gc.agr.aafc.mm.eqauditmng.ext.controller.HeaderActions.isPostToEMRVisible",
+                      "enabled": "gc.agr.aafc.mm.eqauditmng.ext.controller.HeaderActions.isPostToEMREnabled"
+                    }
+                  }
+                }
+              },
               "controlConfiguration": {
                 "_AuditItems/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
-                    "enableSearch": true 
+                    "enableSearch": true
                   },
                   "navigation": {
                     "to_YourItemEntity": {
@@ -173,7 +188,7 @@
                   },
                   "actions": {
                     "EditItem": {
-                      "id": "EditItem",
+                      "id": "EditItem {isCompletable}",
                       "requiresSelection": true,
                       "text": "Edit Item",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onEditEquipmentValues",
@@ -209,12 +224,12 @@
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onClearSearchFilter",
                       "requiresSelection": false,
                       "visible": true,
-                      "icon": "sap-icon://refresh" ,
+                      "icon": "sap-icon://refresh",
                       "position": {
                         "placement": "Before",
                         "anchor": "EditItem"
                       }
-                    } 
+                    }
                   }
                 }
               }
