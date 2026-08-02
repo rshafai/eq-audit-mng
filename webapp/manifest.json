@@ -166,12 +166,11 @@
                 "header": {
                   "actions": {
                     "PostAuditDocument": {
-                      "text": "Post to EMR {isSupervisor} {isCompletable}",
+                      "text": "Post to EMR {isSupervisor} ",
                       "type": "Emphasized",
-                      "requiresSelection": true,
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onPostAuditDocument",
-                      "visible": "gc.agr.aafc.mm.eqauditmng.ext.controller.HeaderActions.isPostToEMRVisible",
-                      "enabled": "gc.agr.aafc.mm.eqauditmng.ext.controller.HeaderActions.isPostToEMREnabled"
+                      "visible": "{isSupervisor}",
+                      "enabled": "{isCompletable}"
                     }
                   }
                 }
@@ -188,11 +187,11 @@
                   },
                   "actions": {
                     "EditItem": {
-                      "id": "EditItem {isCompletable}",
+                      "id": "EditItem ",
                       "requiresSelection": true,
-                      "text": "Edit Item",
+                      "text": "Edit Item {isSupervisor}",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onEditEquipmentValues",
-                      "visible": true,
+                      "visible": "{isEditable}",
                       "enabled": "{= ${isEditable} === true && ${ui>/showEdit} === true }"
                     },
                     "ApproveItem": {
