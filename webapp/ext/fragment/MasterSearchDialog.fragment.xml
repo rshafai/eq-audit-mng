@@ -23,7 +23,7 @@
         description="{Manufacturer} | {ManufacturerSerialNumber} | {ModelNumber} | {FunctionalLocationName} | {CostCenterName}"
         type="Active" />
     </items> -->
-
+    
   </SelectDialog>
 
 </core:FragmentDefinition>

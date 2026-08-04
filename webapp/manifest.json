@@ -189,7 +189,7 @@
                     "EditItem": {
                       "id": "EditItem ",
                       "requiresSelection": true,
-                      "text": "Edit Item {isSupervisor}",
+                      "text": "Edit Item",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onEditEquipmentValues",
                       "visible": "{isEditable}",
                       "enabled": "{= ${isEditable} === true && ${ui>/showEdit} === true }"
@@ -215,7 +215,7 @@
                       "enabled": true,
                       "position": {
                         "placement": "After",
-                        "anchor": "BarcodeScan"
+                        "anchor": "EditItem"
                       }
                     },
                     "ClearSearchFilterAction": {
