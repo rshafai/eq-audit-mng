@@ -178,7 +178,8 @@
               "controlConfiguration": {
                 "_AuditItems/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
-                    "enableSearch": true
+                    "enableSearch": true,
+                    "type": "ResponsiveTable"
                   },
                   "navigation": {
                     "to_YourItemEntity": {
@@ -201,6 +202,14 @@
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onApproveItems",
                       "visible": "{= ${isEditable} === true && ${ui>/showApprove} === true }",
                       "enabled": true
+                    },
+                    "NotInSAP": {
+                      "id": "NotInSAP",
+                      "requiresSelection": false,
+                      "text": "Add Exception",
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onNotInSAPPress",
+                      "visible": true,
+                      "enabled": "{isEditable}"
                     },
                     "BarcodeScan": {
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onBarcodeScan",

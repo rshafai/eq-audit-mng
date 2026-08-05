@@ -1,27 +1,35 @@
-<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+<c:FragmentDefinition xmlns="sap.m" xmlns:c="sap.ui.core">
   <Dialog
     id="exceptionDialog"
     title="Equipment Not in SAP"
     contentWidth="30rem">
-    <content>
-      <VBox class="sapUiSmallMargin">
-        <FormattedText htmlText="{ui>/excepMessage}"/>
-        <Label text="Manufacturer Serial Number" />
-        <Input
-          value="{exc>/manufacturerSerialNo}"
-          placeholder="Enter serial number from physical unit" />
-        <Label text="Manufacturer" class="sapUiTinyMarginTop" />
-        <Input
-          value="{exc>/manufacturer}"
-          placeholder="Enter manufacturer name" />
-        <Label text="Notes" class="sapUiTinyMarginTop" />
-        <TextArea
-          value="{exc>/notes}"
-          rows="3"
-          width="100%"
-          placeholder="Any additional notes about this equipment" />
-      </VBox>
-    </content>
+      <content>
+        <VBox class="sapUiSmallMargin">
+          <Label text="Equipment Condition" class="sapUiSmallMarginTop" />
+          <Select required="true"
+            selectedKey="{
+              path: 'exc>/eqCondition', 
+              type: 'sap.ui.model.odata.type.String',
+              constraints: { isDigitSequence: true, maxLength: 3 }
+            }"
+            items="{ path: '/EqConditionVH' }">
+            <c:Item
+              key="{
+                path: 'Value',
+                type: 'sap.ui.model.odata.type.String',
+                constraints: { isDigitSequence: true, maxLength: 3 }
+              }"
+              text="{Text}" />
+          </Select>
+          <Label text="Comments" class="sapUiTinyMarginTop" />
+          <TextArea
+            value="{exc>/comments}"
+            required="true"
+            rows="5"
+            width="100%"
+            placeholder="Describe the equipment as much as possible." />
+        </VBox>
+      </content>
     <beginButton>
       <Button text="Add Exception" type="Emphasized" press=".onSaveException" />
     </beginButton>
@@ -29,4 +37,4 @@
       <Button text="Cancel" press=".onCancelException" />
     </endButton>
   </Dialog>
-</core:FragmentDefinition>
+</c:FragmentDefinition>
