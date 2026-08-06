@@ -179,7 +179,44 @@
                 "_AuditItems/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "enableSearch": true,
-                    "type": "ResponsiveTable"
+                    "type": "ResponsiveTable",
+                    "groupBy": "" ,
+
+                    "quickVariantSelection": {
+                      "showCounts": true,
+                      "hideTableTitle": false,
+                      "paths": [
+                        {
+                          "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#spv0",
+                          "keepPreviousSelection": true,
+                          "tableSettings": {
+                            "groupBy": ""   
+                          }
+                        },
+                        {
+                          "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#spv1",
+                          "keepPreviousSelection": true,
+                          "tableSettings": {
+                            "groupBy": ""   
+                          }
+                        },
+                        {
+                          "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#spv2",
+                          "keepPreviousSelection": true,
+                          "tableSettings": {
+                            "groupBy": ""   
+                          }
+                        },
+                        {
+                          "annotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#spv3",
+                          "keepPreviousSelection": true,
+                          "tableSettings": {
+                            "groupBy": ""   
+                          }
+                        }
+
+                      ]
+                    }
                   },
                   "navigation": {
                     "to_YourItemEntity": {

@@ -5,9 +5,6 @@
     <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
         <edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI"/>
     </edmx:Reference>
-    <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Communication.xml">
-        <edmx:Include Namespace="com.sap.vocabularies.Communication.v1" Alias="Communication"/>
-    </edmx:Reference>
     <edmx:Reference Uri="/sap/opu/odata4/sap/zqmm_ui_audit_header_v4/srvd/sap/zqmm_ui_audit_header/0001/$metadata">
         <edmx:Include Namespace="com.sap.gateway.srvd.zqmm_ui_audit_header.v0001" Alias="SAP__self"/>
     </edmx:Reference>
@@ -34,6 +31,52 @@
                     </Record>
                 </Annotation>
             </Annotations> -->
+            <!-- <Annotations Target="SAP__self.ZQMM_C_Audit_ItemsType">
+                <Annotation Term="UI.PresentationVariant">
+                    <Record>
+                        <PropertyValue Property="SortOrder">
+                            <Collection>
+                                <Record Type="Common.SortOrderType">
+                                    <PropertyValue Property="Property" PropertyPath="ItemNumber"/>
+                                    <PropertyValue Property="Descending" Bool="false"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="RequestAtLeast">
+                            <Collection>
+                                <PropertyPath>ExceptionType</PropertyPath>
+                                <PropertyPath>FunctionalLocationName</PropertyPath>
+                                <PropertyPath>FunctionalLocation</PropertyPath>
+                                <PropertyPath>CostCenterName</PropertyPath>
+                                <PropertyPath>CostCenter</PropertyPath>
+                                <PropertyPath>AssetManufacturerName</PropertyPath>
+                                <PropertyPath>ManufacturerSerialNumber</PropertyPath>
+                                <PropertyPath>AssetLocationName</PropertyPath>
+                                <PropertyPath>AssetLocation</PropertyPath>
+                                <PropertyPath>MaintenancePlantName</PropertyPath>
+                                <PropertyPath>MaintenancePlant</PropertyPath>
+                                <PropertyPath>AuditedAt</PropertyPath>
+                                <PropertyPath>AuditedBy</PropertyPath>
+                                <PropertyPath>LastChangedAt</PropertyPath>
+                                <PropertyPath>AuditItemStatusCriticality</PropertyPath>
+                                <PropertyPath>AuditItemStatusText</PropertyPath>
+                                <PropertyPath>AuditItemStatus</PropertyPath>
+                                <PropertyPath>Equipment</PropertyPath>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="Visualizations">
+                            <Collection>
+                                <AnnotationPath>@UI.LineItem</AnnotationPath>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="GroupBy">
+                            <Collection>
+                                <PropertyPath>ItemNumber</PropertyPath>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>-->
         </Schema>
     </edmx:DataServices>
 </edmx:Edmx>
