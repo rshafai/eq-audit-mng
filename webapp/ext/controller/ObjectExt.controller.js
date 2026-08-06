@@ -496,9 +496,9 @@ _openEditDialog: function (oContext) {
       var oExtensionAPI = this.base.getExtensionAPI();
       var oTable = this._getItemsTable();
 
-      // 1. Search alredy loaded table first
+      // Search the item table first
       if (oTable) {
-        var oBinding = oTable.getRowBinding();
+        var oBinding = oTable.getRowBinding();   //only searches the portion that is loaded in current page
         if (oBinding) {
           var aContexts = oBinding.getCurrentContexts();
           var oMatchedContext = aContexts.find(function (oContext) {
@@ -507,16 +507,17 @@ _openEditDialog: function (oContext) {
         }
       } 
       if (oMatchedContext){
-        //already loaded
-        this._highlightItemRow(oMatchedContext, true);  //open Edit dialog
+        //already loaded in current page
+        this._highlightItemRow(oMatchedContext, true);  //true: open Edit dialog
 
       } else {
-        this._triggerSearch(sEquipment);
+        this._itemSearchServer(sEquipment);
       }
     }
   },
 
   _showFoundEquipmentStrip: function (oItem) {
+    //Not used
     const sDisplayEquip = oItem.Equipment.replace(/^0+/, '');
     MessageBox.information(
       "Equipment " + sDisplayEquip + " - " + oItem.EquipmentName +
@@ -575,9 +576,9 @@ _openEditDialog: function (oContext) {
 
   
 //────────────────────────────────────────
-// Search for Equipment - Server side
+// Search for Equipment in the item table - Server side search
 //────────────────────────────────────────
-_triggerSearch: function(sEquipment){
+_itemSearchServer: function(sEquipment){
   //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem::StandardAction::BasicSearch
     var oTable = this._getItemsTable();
     var oRowBinding = oTable.getRowBinding();
@@ -587,9 +588,8 @@ _triggerSearch: function(sEquipment){
       oRowBinding.attachEvent("change", this._onTableDataChanged, this);
       //oRowBinding.attachEvent("dataReceived", this._onTableDataReceived, this);
 
-      //Force trigger search
+      //Force trigger item search
       oRowBinding.changeParameters({ "$search": sEquipment});  //force trigger search 
-      
     }
 },
 
@@ -606,15 +606,83 @@ _onTableDataChanged: function(oEvent){
       this._highlightItemRow(oBinding.getCurrentContexts()[0], false);  //open dialog
     } else {
       if (iCount === 0){
-        // Not in SAP
-      }
-    }
-  }
+        // Not in Item table
+        const sEquipment = oEvent.getSource().getQueryOptionsFromParameters().$search;
+        // clear the search filter first so the table is restored
+        oBinding.changeParameters({ "$search": undefined }); 
+
+        MessageBox.confirm( this._readi18n("BarcodeNotFound", sEquipment ), 
+          {
+            title: "Equipment Not Found",
+            contentWidth: "500px",
+            actions: ["Retry Scan", "Search SAP",  MessageBox.Action.CANCEL],
+            emphasizedAction: "Retry Scan",
+            onClose: (sAction) => {
+              if (sAction === "Search SAP") {
+                // reuse existing master data search dialog
+                // pre-populate with the scanned equipment number
+                this._openMasterSearchWithEquipment(sEquipment);
+
+              } else if (sAction === "Retry Scan") {
+                MessageToast.show("Ready to scan. Please scan the barcode again.");
+                this.onBarcodeScan();
+              }
+              // CANCEL: do nothing, table already restored 
+            }
+          }
+        );
+
+      }  //count=0
+    } 
+  } // count=1
 },
 
-// _onTableDataReceived: function(oEvent){
-//   console.log("----In table data received");
-// },
+_readi18n: function(tag, v1, v2){
+  const oResourceBundle = this.getView().getModel("i18n").getResourceBundle();
+  return oResourceBundle.getText(tag, [v1, v2]); 
+  
+},
+
+
+_openMasterSearchWithEquipment: function (sEquipment) {
+  this._loadMasterSearchDialog().then(oDialog => {
+    oDialog.setModel(this.getView().getModel());
+    oDialog.bindElement({ path: "" });
+
+    oDialog.unbindAggregation("items");
+    oDialog.bindAggregation("items", {
+      path: "/ZQMM_R_Equip_BarcodeTR",
+      template: new StandardListItem({
+        title: "{Equipment} \u2013 {EquipmentName}",
+        description: "{Manufacturer} | {ManufacturerSerialNumber}",
+        type: "Active"
+      }),
+      templateShareable: false
+    });
+    oDialog.open();
+
+    // pre-filter with the scanned value after dialog opens
+    // give it a tick to render first
+    setTimeout(() => {
+      const oItemsBinding = oDialog.getBinding("items");
+      if (oItemsBinding) {
+        oItemsBinding.filter([
+          new Filter({
+            filters: [
+              new Filter("Equipment",               FilterOperator.Contains, sEquipment),
+              //new Filter("EquipmentName",           FilterOperator.Contains, sEquipment),
+              new Filter("ManufacturerSerialNumber", FilterOperator.Contains, sEquipment)
+            ],
+            and: false
+          })
+        ]);
+      }
+    }, 100);
+  });
+},
+
+
+
 
 onClearSearchFilter: function (oEvent, aContexts)  {
   // 1. Visual Fix: Turn the text button into an icon on the fly
@@ -654,6 +722,8 @@ isPostToEMREnabled: function(oContext) {
   // Enable button for all other statuses
   return true;
 },
+
+
 //────────────────────────────────────────
 // Post to EMR, Complete Audit Header
 //────────────────────────────────────────

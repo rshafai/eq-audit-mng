@@ -136,15 +136,6 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable"
-                  },
-                  "actions": {
-                    "startNewAuction": {
-                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.AuditHeaderListExt.onCreateNewAuditPressed",
-                      "visible": true,
-                      "enabled": true,
-                      "requiresSelection": false,
-                      "text": "Start New Auction"
-                    }
                   }
                 }
               }
@@ -166,7 +157,7 @@
                 "header": {
                   "actions": {
                     "PostAuditDocument": {
-                      "text": "Post to EMR {isSupervisor} ",
+                      "text": "Post to EMR",
                       "type": "Emphasized",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onPostAuditDocument",
                       "visible": "{isSupervisor}",
@@ -243,7 +234,7 @@
                     "NotInSAP": {
                       "id": "NotInSAP",
                       "requiresSelection": false,
-                      "text": "Add Exception",
+                      "text": "Not in SAP",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onNotInSAPPress",
                       "visible": true,
                       "enabled": "{isEditable}"
