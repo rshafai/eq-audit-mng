@@ -45,41 +45,17 @@ sap.ui.define([
               });
               this.getView().setModel(oUIModel, "ui");
             },
-            onAfterRendering(){
-              //Make rows clickable
-              const oTable = this._getItemsTable(true); // Get the inner responsive table
-    
-              if (oTable) {
-                  //Add eventdelegate to intercept rows as they physically render in the DOM
-                  oTable.addEventDelegate({
-                      onAfterRendering: function() {
-                          var aItems = oTable.getItems();
 
-                          aItems.forEach(function(oItem) {
-                              // Check if this row control is already marked as handled to prevent adding multiple listeners
-                              if (oItem && !oItem._bCustomClickBound) {
-                                  //oItem.addStyleClass("sapUiSelectableCustomRow"); 
-                                  if (oItem.setType) {
-                                    oItem.setType("Navigation");
-                                  }
-          
-                                  // Attach a native browser event delegate listener directly to the row control
-                                  oItem.addEventDelegate({
-                                      onclick: function(oBrowserEvent) {
-                                          // Block the browser and framework from bubbling this click up further
-                                          oBrowserEvent.stopPropagation();
-                                          oBrowserEvent.preventDefault();
-                                          
-                                          this.onItemRowPress(oItem);
-                                      }.bind(this)
-                                  }, this);
-                                  oItem._bCustomClickBound = true; // Set custom flag to lock it
-                              }
-                          }, this);
-                      }.bind(this)
-                  });
+
+            onAfterRendering: function() {
+              const oTable = this._getItemsTable(true); // get inner table
+              
+              if (oTable && !this._bTableListenerAttached) {
+                  // Attach to the table's native data update loop
+                  oTable.attachUpdateFinished(this.onTableUpdateFinished, this);
+                  this._bTableListenerAttached = true; 
               }
-            },
+          },
 
             routing: {
 
@@ -97,7 +73,6 @@ sap.ui.define([
                   //Selection change event
                   oTable.attachSelectionChange(this.onTableSelectionChange, this);
                   this._bSelectionAttached = true;
-
 
                   // //Make rows clickable
                   // oTable = this._getItemsTable(true);  //get inner table
@@ -129,8 +104,34 @@ sap.ui.define([
           } // routing
         }, // override
 
+  onTableUpdateFinished: function(oEvent) {
+      const oTable = oEvent.getSource();
+      var aItems = oTable.getItems();
+      var that = this;
+  
+      aItems.forEach(function(oItem) {
+          // Only attach to rows that haven't been processed yet
+          if (oItem && !oItem._bCustomClickBound) {
+              
+              if (oItem.setType) {
+                oItem.setType("Navigation");
+              }  
+              // 2. Attach a simple, isolated click listener to the row
+              oItem.addEventDelegate({
+                  onclick: function(oBrowserEvent) {
+                      // Stop Fiori Elements from running its internal crashing code
+                      oBrowserEvent.stopPropagation();
+                      oBrowserEvent.preventDefault();
+                      
+                      // Call your dialog handler
+                      that.onItemRowPress(oItem);
+                  }
+              }, that);
+              oItem._bCustomClickBound = true; // Lock the row so we never double-bind it
+          }
+      });
+  },
   onItemRowPress: function (oClickedRow) {
-    debugger;
     var oRowContext = oClickedRow.getBindingContext();
     if (!oRowContext) { return; }
   
@@ -160,21 +161,15 @@ sap.ui.define([
   },
 
   
-  _getInnerTable(){
-    const oTable = this._getItemsTable();
-    if (oTable){
-      return this.base.getView().byId(oTable.getId() + "-innerTable");
-    }
-  },
   _getItemsTable(bInner){
     const oExtensionAPI = this.base.getExtensionAPI();
     let sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem"; 
     if (bInner) {
       sTableId += "-innerTable"
     }
+    return this.base.byId(sTableId);
     //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
     //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem-innerTable
-    return this.base.byId(sTableId);
   },
 
 
@@ -378,7 +373,7 @@ _openEditDialog: function (oContext) {
 
 
   onCancelEquipDialog:function(oEvent){
-    let oInnerTable = this._getInnerTable();
+    let oInnerTable = this._getItemsTable(true);
     if (oInnerTable) {
       oInnerTable.removeSelections();
       oInnerTable.fireSelectionChange();
@@ -597,7 +592,7 @@ _openEditDialog: function (oContext) {
       var oData = oContext.getObject();
       MessageToast.show("Found Equipment: " + oData.Equipment);
 
-      var oTable = this._getInnerTable();
+      var oTable = this._getItemsTable(true);
       
       if (oTable && typeof oTable.getItems === "function") {
         var aItems = oTable.getItems();
