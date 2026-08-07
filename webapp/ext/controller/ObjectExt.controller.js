@@ -19,6 +19,9 @@ sap.ui.define([
 
         // this section allows to extend lifecycle hooks or hooks provided by Fiori elements
         override: {
+          onListNavigationExtension: function (oEvent) {
+            debugger;
+          },
             /**
              * Called when a controller is instantiated and its View controls (if available) are already created.
              * Can be used to modify the View before it is displayed, to bind event handlers and do other one-time initialization.
@@ -43,13 +46,42 @@ sap.ui.define([
               this.getView().setModel(oUIModel, "ui");
             },
             onAfterRendering(){
+              //Make rows clickable
+              const oTable = this._getItemsTable(true); // Get the inner responsive table
+    
+              if (oTable) {
+                  //Add eventdelegate to intercept rows as they physically render in the DOM
+                  oTable.addEventDelegate({
+                      onAfterRendering: function() {
+                          var aItems = oTable.getItems();
+
+                          aItems.forEach(function(oItem) {
+                              // Check if this row control is already marked as handled to prevent adding multiple listeners
+                              if (oItem && !oItem._bCustomClickBound) {
+                                  //oItem.addStyleClass("sapUiSelectableCustomRow"); 
+                                  if (oItem.setType) {
+                                    oItem.setType("Navigation");
+                                  }
+          
+                                  // Attach a native browser event delegate listener directly to the row control
+                                  oItem.addEventDelegate({
+                                      onclick: function(oBrowserEvent) {
+                                          // Block the browser and framework from bubbling this click up further
+                                          oBrowserEvent.stopPropagation();
+                                          oBrowserEvent.preventDefault();
+                                          
+                                          this.onItemRowPress(oItem);
+                                      }.bind(this)
+                                  }, this);
+                                  oItem._bCustomClickBound = true; // Set custom flag to lock it
+                              }
+                          }, this);
+                      }.bind(this)
+                  });
+              }
             },
 
             routing: {
-
-//             onPageReady: function (mParameters) {
-//                console.log("Page ready");
-//             },
 
               onBeforeNavigation: function (oContext, oNavigationParameters) {
                 var oRowData = oContext.getObject();
@@ -60,40 +92,53 @@ sap.ui.define([
                 return true;
               },
               onAfterBinding: function () {
-debugger;
-                var oTable = this._getItemsTable();
-                if (oTable) {
+                let oTable = this._getItemsTable();
+                if (oTable && !this._bSelectionAttached) {
                   //Selection change event
                   oTable.attachSelectionChange(this.onTableSelectionChange, this);
+                  this._bSelectionAttached = true;
 
-                  //Data received event
-                  //this.getView().attachEvent("modelContextChange", this._onTableDataReceived, this);
-                  //oTable.attachModelContextChange(this._onTableDataReceived);
 
-                  // oTable.attachEvent("rowsUpdated", function _onRowsUpdated() {
-                  //   var oRowBinding = oTable.getRowBinding();
-                  //   if (oRowBinding) {
-                  //       oTable.detachEvent("rowsUpdated", _onRowsUpdated, this);
-                  //       oRowBinding.attachEvent("dataReceived", this._onTableDataReceived, this);
-                  //   }
-                  // }.bind(this));
-                  // var oRowBinding = oTable.getRowBinding();
-                  // if (oRowBinding) {
-                  //   oRowBinding.attachEvent("dataReceived", this._onTableDataReceived, this);
+                  // //Make rows clickable
+                  // oTable = this._getItemsTable(true);  //get inner table
+                  // var that = this;
+                  // if (oTable && !this._bRowPressAttached) {
+                  //   oTable.attachEventOnce("itemPress", this.onItemRowPress, this);
+                  //   this._bRowPressAttached = true;  // attach once only
+                  //   oTable.addEventDelegate({
+                  //     onAfterRendering: function() {
+                  //       var aItems = oTable.getItems();
+                  //       aItems.forEach(function(oItem) {
+                  //           if (oItem.setType) {
+                  //               oItem.setType("Navigation"); // Forces cursor pointer and active click styles
+                  //               oItem.attachEventOnce("press", function(oEvent){
+                  //                 that.onItemRowPress(oEvent);
+                  //               });
+                  //           }
+                  //       });
+                  //     }
+                  //   });
                   // }
 
+
                   //Initialize table
-                  // oTable.removeSelections(true);
-                  // oTable.fireSelectionChange();
                   this.onClearSearchFilter();
                 }
             }
 
-
           } // routing
-
         }, // override
 
+  onItemRowPress: function (oClickedRow) {
+    debugger;
+    var oRowContext = oClickedRow.getBindingContext();
+    if (!oRowContext) { return; }
+  
+    // open edit dialog
+    this._bApprovalMode = false;
+    this.getView().setBusy(true);
+    this._openEditDialog(oRowContext);
+  },
 
   onTableSelectionChange: function (oEvent) {
       const aSelectedContexts = this.base.getExtensionAPI().getSelectedContexts(oEvent.getParameter("id"));
@@ -121,9 +166,12 @@ debugger;
       return this.base.getView().byId(oTable.getId() + "-innerTable");
     }
   },
-  _getItemsTable(){
+  _getItemsTable(bInner){
     const oExtensionAPI = this.base.getExtensionAPI();
-    const sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem"; 
+    let sTableId = this.base.getView().getId() + "--fe::table::_AuditItems::LineItem"; 
+    if (bInner) {
+      sTableId += "-innerTable"
+    }
     //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem
     //gc.agr.aafc.mm.eqauditmng::ZQMM_C_Audit_HeaderObjectPage--fe::table::_AuditItems::LineItem-innerTable
     return this.base.byId(sTableId);
@@ -262,6 +310,7 @@ _openEditDialog: function (oContext) {
 
     const oModel = this.getView().getModel();
     const oItemContext = this._oItemContext;
+    const oHeaderContext = this.getView().getBindingContext();
     const sException  = this._oDialogModel.getProperty("/ExceptionType");     
     const sComments   = this._oDialogModel.getProperty("/Comments");     
     const sEquipment  = this._oDialogModel.getProperty("/Equipment");   
@@ -311,9 +360,14 @@ _openEditDialog: function (oContext) {
       MessageToast.show(bApproveFlag ? "Item approved." : "Changes saved for Equipment: "+ sEquipment );
       this.onCancelEquipDialog();  //this._oDialog.close();
       this._oItemContext.refresh();
-      this._oItemContext.requestSideEffects([  //"EqCondition", "Comments",
-        "AuditItemStatus", "AuditItemStatusText", "AuditItemStatusCriticality", "LastChangedAt", "_Change", "_ExceptionType"
-      ]);
+      // this._oItemContext.requestSideEffects([  "EqCondition", "Comments",
+      //   "AuditItemStatus", "AuditItemStatusText", "AuditItemStatusCriticality", "LastChangedAt", "_Change", "_ExceptionType"
+      // ]);
+      oHeaderContext.refresh();
+      // oHeaderContext.requestSideEffects([   //doesnt work in on-prem when operation was at item level 
+      //   "AuditHeaderStatus",
+      //   "_AuditItems"
+      // ]);
     }).catch(oErr => { 
       this._oDialog.setBusy(false);
       MessageBox.error((bApproveFlag ? "Approval" : "Save") + " failed: " + oErr.message);
@@ -448,14 +502,18 @@ _openEditDialog: function (oContext) {
                           "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.approveItems(...)",
                           oCtx
       );
-      return oBinding.execute();  //.then(() => oCtx.requestSideEffects(["AuditItemStatus"]));
+      return oBinding.execute();  
     });
     Promise.all(aCalls).then(() => {
       MessageToast.show("Items approved.");
-      oHeaderContext.requestSideEffects([
-        "_AuditItems",
-        "AuditHeaderStatus"   // also refresh header status since approveItems may trigger setHeaderInProcess
+      this._oItemContext.requestSideEffects([
+        "AuditItemStatus", "_AuditChange"
       ]);
+      oHeaderContext.refresh();
+      // oHeaderContext.requestSideEffects([  //doesn't work in on-prem
+      //   "_AuditItems",
+      //   "AuditHeaderStatus"   
+      // ]);
     }).catch(oErr => {
       MessageBox.error("Approval failed: " + oErr.message);
     });
@@ -637,11 +695,6 @@ _onTableDataChanged: function(oEvent){
   } // count=1
 },
 
-_readi18n: function(tag, v1, v2){
-  const oResourceBundle = this.getView().getModel("i18n").getResourceBundle();
-  return oResourceBundle.getText(tag, [v1, v2]); 
-  
-},
 
 
 _openMasterSearchWithEquipment: function (sEquipment) {
@@ -730,7 +783,7 @@ isPostToEMREnabled: function(oContext) {
 onPostAuditDocument: function (oContext) {
   const oHeaderContext = this.getView().getBindingContext();
   const oModel = this.getView().getModel();
-  const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.completeAudit";
+  const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.postToEMR";
 
   this.getView().setBusy(true);
 
@@ -771,41 +824,30 @@ onPostAuditDocument: function (oContext) {
 _executePostToEMR: function () {
   const oHeaderContext = this.getView().getBindingContext();
   const oModel = this.getView().getModel();
-  const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.completeAudit";
+  const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.postToEMR";
+
+  
 
   this.base.editFlow.securedExecution(
     () => {
+      sap.ui.getCore().getMessageManager().removeAllMessages();
       const oBinding = oModel.bindContext(
         sActionName + "(...)",
         oHeaderContext
       );
-      return oBinding.execute().then(() => {
-        const oBoundCtx = oBinding.getBoundContext();
-        return oBoundCtx ? oBoundCtx.requestObject() : null;
-      });
+      return oBinding.execute();
+      // no .then() needed - framework handles success/error messages
     },
     {
       updatableObject: oHeaderContext,
       busyControl: this.getView()
     }
-  ).then((oResult) => {
-    const sMessage = oResult && oResult.Message
-      ? oResult.Message
-      : "Post to Equipment Master completed.";
-
-    MessageBox.success(sMessage, {
-      title: "Post to Equipment Master"
-    });
-
-    oHeaderContext.requestSideEffects([
-      "AuditHeaderStatus",
-      "_AuditItems"
-    ]);
-  }).catch(oErr => {
-    MessageBox.error(
-      oErr.message || "Post to Equipment Master failed."
-    );
+  ).then(() => {
+    // action succeeded - framework already showed the success message
+    // just refresh side effects
+    oHeaderContext.refresh();
   });
+  // no .catch() at all - securedExecution handles error display automatically
 },
 
 //────────────────────────────────────────
@@ -919,12 +961,6 @@ _addEquipmentToAudit: function (sEquipment) {
 },
 
 
-_refreshItemTable: function () {
-  const oHeaderContext = this.getView().getBindingContext();
-  if (oHeaderContext) {
-    oHeaderContext.requestSideEffects(["_AuditItems"]);
-  }
-},
 
 
 //────────────────────────────────────────
@@ -1007,7 +1043,15 @@ onSaveException: function () {
 
 onCancelException: function () {
   this._oExceptionDialog.close();
-}
+},
+
+
+
+_readi18n: function(tag, v1, v2){
+  const oResourceBundle = this.getView().getModel("i18n").getResourceBundle();
+  return oResourceBundle.getText(tag, [v1, v2]); 
+  
+},
 
 
   });

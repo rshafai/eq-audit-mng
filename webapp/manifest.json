@@ -134,6 +134,15 @@
               },
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "actions": {
+                    "CustomActionKey": {
+                      "text": "Create New Audit",
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.AuditHeaderListExt.onCreateNewAudit",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false
+                    }
+                  },
                   "tableSettings": {
                     "type": "ResponsiveTable"
                   }
@@ -171,6 +180,7 @@
                   "tableSettings": {
                     "enableSearch": true,
                     "type": "ResponsiveTable",
+                    "rowPress": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onItemRowPress",
                     "groupBy": "" ,
 
                     "quickVariantSelection": {
@@ -205,15 +215,18 @@
                             "groupBy": ""   
                           }
                         }
-
                       ]
                     }
                   },
                   "navigation": {
-                    "to_YourItemEntity": {
-                      "type": "custom"
+                    "ZQMM_C_Audit_Items": {
+                      "detail": {
+                        "route": ""  
+                      }
                     }
                   },
+                  
+                  
                   "actions": {
                     "EditItem": {
                       "id": "EditItem ",
