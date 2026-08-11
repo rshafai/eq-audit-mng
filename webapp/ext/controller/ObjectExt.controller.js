@@ -645,63 +645,6 @@ onValidateEquipChanges: function () {
     }
   },
 
-  _showFoundEquipmentStrip: function (oItem) {
-    //Not used
-    const sDisplayEquip = oItem.Equipment.replace(/^0+/, '');
-    MessageBox.information(
-      "Equipment " + sDisplayEquip + " - " + oItem.EquipmentName +
-      " was found in this audit.",
-      {
-        title: "Equipment Found",
-        actions: ["Go to Equipment", MessageBox.Action.CLOSE],
-        onClose: (sAction) => {
-          if (sAction === "Go to Equipment") {
-            this._scrollToEquipment(oItem.Equipment);
-          }
-        }
-      }
-    );
-  },
-
-  _highlightItemRow(oContext, bOpenEditDialog){
-    if (oContext) {
-      var oData = oContext.getObject();
-      MessageToast.show("Found Equipment: " + oData.Equipment);
-
-      var oTable = this._getItemsTable(true);
-      
-      if (oTable && typeof oTable.getItems === "function") {
-        var aItems = oTable.getItems();
-        //reset previously highlighted rows
-        // $.each(aItems, function(index, row){
-        //   row.setHighlight(sap.ui.core.MessageType.None);
-        // });
-        oTable.removeSelections(true);
-
-        if (oContext){
-          var oRowToSelect = aItems.find(function(oItem) {
-              return typeof oItem.getBindingContext === "function" && oItem.getBindingContext() === oContext;
-          });
-          if (oRowToSelect) {
-            oRowToSelect.focus();
-            // oRowToSelect.setHighlight(sap.ui.core.MessageType.Success); // Highlight the left border green
-
-            // Select the checkbox and open edit/details dialog
-            if (typeof oTable.setSelectedItem === "function") {
-              oTable.setSelectedItem(oRowToSelect, true);
-              oTable.fireSelectionChange();
-
-              if (bOpenEditDialog){
-                this._openEditDialog(oContext);
-              }
-            }
-          }
-        }
-      }
-    } else {
-        MessageToast.show("Equipment not loaded or not found in this table. You can use 'Add Equipment' to search SAP master data.");
-    }
-  },
 
   
 //────────────────────────────────────────
@@ -723,91 +666,125 @@ _itemSearchServer: function(sEquipment){
 },
 
 _onTableDataChanged: function(oEvent){
-  if (this._bBarCodeSearch === false){ return; }
+  //Search all items to find a barcode
+  if (this._bBarCodeSearch === false) { return; }
   this._bBarCodeSearch = false;
 
   const oBinding = oEvent.getSource();
-  if (oBinding && typeof oBinding.getLength === "function") {
-    const iCount = oBinding.getLength();
-    oBinding.detachEvent("change", this._onTableDataChanged, this);
+  if (!oBinding || typeof oBinding.getLength !== "function") { return; }
 
-    if (iCount === 1){
-      this._highlightItemRow(oBinding.getCurrentContexts()[0], false);  //open dialog
-    } else {
-      if (iCount === 0){
-        // Not in Item table
-        const sEquipment = oEvent.getSource().getQueryOptionsFromParameters().$search;
-        // clear the search filter first so the table is restored
-        oBinding.changeParameters({ "$search": undefined }); 
+  const iCount = oBinding.getLength();
+  oBinding.detachEvent("change", this._onTableDataChanged, this);
 
-        MessageBox.confirm( this._readi18n("BarcodeNotFound", sEquipment ), 
-          {
-            title: "Equipment Not Found",
-            contentWidth: "500px",
-            actions: ["Retry Scan", "Search SAP",  MessageBox.Action.CANCEL],
-            emphasizedAction: "Retry Scan",
-            onClose: (sAction) => {
-              if (sAction === "Search SAP") {
-                // reuse existing master data search dialog
-                // pre-populate with the scanned equipment number
-                this._openMasterSearchWithEquipment(sEquipment);
+  if (iCount === 1) {
+    // found in item table - highlight and open dialog
+    this._highlightItemRow(oBinding.getCurrentContexts()[0], true);
 
-              } else if (sAction === "Retry Scan") {
-                MessageToast.show("Ready to scan. Please scan the barcode again.");
-                this.onBarcodeScan();
-              }
-              // CANCEL: do nothing, table already restored 
-            }
-          }
-        );
+  } else if (iCount === 0) {
+    // not in item table
+    const sEquipment = oEvent.getSource().getQueryOptionsFromParameters().$search;
+    oBinding.changeParameters({ "$search": undefined }); // clear the item table search filter immediately
 
-      }  //count=0
-    } 
-  } // count=1
+    // automatically search SAP equipment master for exact match
+    this._searchEquipmentMaster(sEquipment);
+  }
 },
 
 
+_searchEquipmentMaster: function (sEquipment) {
+  const oModel = this.getView().getModel();
 
-_openMasterSearchWithEquipment: function (sEquipment) {
-  this._loadMasterSearchDialog().then(oDialog => {
-    oDialog.setModel(this.getView().getModel());
-    oDialog.bindElement({ path: "" });
+  this.getView().setBusy(true);
 
-    oDialog.unbindAggregation("items");
-    oDialog.bindAggregation("items", {
-      path: "/ZQMM_R_Equip_BarcodeTR",
-      template: new StandardListItem({
-        title: "{Equipment} \u2013 {EquipmentName}",
-        description: "{Manufacturer} | {ManufacturerSerialNumber}",
-        type: "Active"
-      }),
-      templateShareable: false
-    });
-    oDialog.open();
+  // exact match search against equipment master
+  // using Equipment field directly for precise barcode match
+  const oListBinding = oModel.bindList(
+    "/ZQMM_R_Equip_BarcodeTR",
+    null,
+    [],
+    [ new Filter("Equipment", FilterOperator.EQ,
+        sEquipment.padStart(18, '0')) ],  // pad to 18 chars for EQUNR format
+    { $select: "Equipment,EquipmentName,MaintPlant,Location,AssetRoom" }
+  );
 
-    // pre-filter with the scanned value after dialog opens
-    // give it a tick to render first
-    setTimeout(() => {
-      const oItemsBinding = oDialog.getBinding("items");
-      if (oItemsBinding) {
-        oItemsBinding.filter([
-          new Filter({
-            filters: [
-              new Filter("Equipment",               FilterOperator.Contains, sEquipment),
-              //new Filter("EquipmentName",           FilterOperator.Contains, sEquipment),
-              new Filter("ManufacturerSerialNumber", FilterOperator.Contains, sEquipment)
-            ],
-            and: false
-          })
-        ]);
-      }
-    }, 100);
+  oListBinding.requestContexts(0, 1).then(aContexts => {
+    this.getView().setBusy(false);
+
+    if (aContexts.length === 1) {
+      // found in SAP master data - show details and ask to add
+      const oEquip = aContexts[0].getObject();
+      this._showEquipmentFoundConfirmation(sEquipment, oEquip);
+    } else {
+      // not found in SAP at all - offer Not in SAP option
+      this._showNotInSAPConfirmation(sEquipment);
+    }
+  }).catch(() => {
+    this.getView().setBusy(false);
+    MessageBox.error(
+      "Could not search equipment master data. Please try again.",
+      { title: "Search Error" }
+    );
   });
 },
 
+_showEquipmentFoundConfirmation: function (sEquipment, oEquip) {
+  // show equipment details and ask user whether to add to audit
+  const sDisplayEquip = sEquipment.replace(/^0+/, ''); // strip leading zeros for display
+
+  const sMessage =
+    `Equipment found in SAP master data:\n\n` +
+    `Equipment:         ${sDisplayEquip} - ${oEquip.EquipmentName || ''}\n` +
+    `Maintenance Plant: ${oEquip.MaintPlant || '(not set)'}\n` +
+    `Asset Location:    ${oEquip.Location    || '(not set)'}\n` +
+    `Asset Room:        ${oEquip.AssetRoom         || '(not set)'}\n\n` +
+    `Would you like to add this equipment to the audit?`;
+
+  MessageBox.confirm(sMessage, {
+    title: "Equipment Found in SAP",
+    contentWidth: "500px",
+    actions: ["Add to Audit", "Retry Scan", MessageBox.Action.CANCEL],
+    emphasizedAction: "Add to Audit",
+    onClose: (sAction) => {
+      if (sAction === "Add to Audit") {
+        this._addEquipmentToAudit(oEquip.Equipment);
+      } else if (sAction === "Retry Scan") {
+        MessageToast.show("Ready to scan. Please scan the barcode again.");
+        this.onBarcodeScan();
+      }
+      // CANCEL: do nothing
+    }
+  });
+},
+
+_showNotInSAPConfirmation: function (sEquipment) {
+  const sDisplayEquip = sEquipment.replace(/^0+/, '');
+
+  MessageBox.confirm(
+    `Equipment "${sDisplayEquip}" was not found in this audit or in SAP master data.\n\n` +
+    `Would you like to record this as a "Not in SAP" exception?`,
+    {
+      title: "Equipment Not Found in SAP",
+      contentWidth: "500px",
+      actions: ["Add as Exception", "Retry Scan", MessageBox.Action.CANCEL],
+      emphasizedAction: "Add as Exception",
+      onClose: (sAction) => {
+        if (sAction === "Add as Exception") {
+          // open the exception dialog pre-populated
+          // so user can add condition and comments
+          this.onNotInSAPPress();
+        } else if (sAction === "Retry Scan") {
+          MessageToast.show("Ready to scan. Please scan the barcode again.");
+          this.onBarcodeScan();
+        }
+        // CANCEL: do nothing
+      }
+    }
+  );
+},
 
 
-
+//────────────────────────────────────────
+//────────────────────────────────────────
 onClearSearchFilter: function (oEvent, aContexts)  {
   // 1. Visual Fix: Turn the text button into an icon on the fly
   const oTable = this._getItemsTable();
@@ -827,7 +804,45 @@ onClearSearchFilter: function (oEvent, aContexts)  {
   }
 },
 
+_highlightItemRow(oContext, bOpenEditDialog){
+  if (oContext) {
+    var oData = oContext.getObject();
+    MessageToast.show("Found Equipment: " + oData.Equipment);
 
+    var oTable = this._getItemsTable(true);
+    
+    if (oTable && typeof oTable.getItems === "function") {
+      var aItems = oTable.getItems();
+      //reset previously highlighted rows
+      // $.each(aItems, function(index, row){
+      //   row.setHighlight(sap.ui.core.MessageType.None);
+      // });
+      oTable.removeSelections(true);
+
+      if (oContext){
+        var oRowToSelect = aItems.find(function(oItem) {
+            return typeof oItem.getBindingContext === "function" && oItem.getBindingContext() === oContext;
+        });
+        if (oRowToSelect) {
+          oRowToSelect.focus();
+          // oRowToSelect.setHighlight(sap.ui.core.MessageType.Success); // Highlight the left border green
+
+          // Select the checkbox and open edit/details dialog
+          if (typeof oTable.setSelectedItem === "function") {
+            oTable.setSelectedItem(oRowToSelect, true);
+            oTable.fireSelectionChange();
+
+            if (bOpenEditDialog){
+              this._openEditDialog(oContext);
+            }
+          }
+        }
+      }
+    }
+  } else {
+      MessageToast.show("Equipment not loaded or not found in this table. You can use 'Add Equipment' to search SAP master data.");
+  }
+},
 
 //────────────────────────────────────────
 // Post to EMR, Complete Audit Header
@@ -988,13 +1003,14 @@ _addEquipmentToAudit: function (sEquipment) {
   sap.ui.getCore().getMessageManager().removeAllMessages();
 
   // attach createCompleted BEFORE calling create
-  // this is the official documented way to handle create errors in V4
+  // this is the official way to handle create errors in V4
   oListBinding.attachEventOnce("createCompleted", (oEvent) => {
     const bSuccess = oEvent.getParameter("success");
     this.getView().setBusy(false);
 
     if (bSuccess) {
-      MessageToast.show("Equipment " + sEquipment + " added to audit.");
+      let itemNumber = oEvent.getParameter("context").getObject().ItemNumber || "";
+      MessageToast.show("Equipment " + sEquipment + " added to audit. Item # " + itemNumber);
       oHeaderContext.requestSideEffects(["_AuditItems"]);
     } else {
       // delete the failed transient context to stop retry loop
