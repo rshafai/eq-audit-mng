@@ -40,8 +40,8 @@ sap.ui.define([
                 excepMessage: "<p>You can use Exceptions to identify equipment that are not found in SAP.</p>" + 
                               "<p class=\"sapUiLargeMarginBottom\">Please use <strong>Add Equipment</strong> first to search for the equipment in SAP, if found you can add it to the Audit Items list.&nbsp;" + 
                               "If not found then please report it as an Exception.</p>",
-                showEdit: false,
-                showApprove: false
+                // showEdit: false,
+                // showApprove: false
               });
               this.getView().setModel(oUIModel, "ui");
             },
@@ -51,7 +51,7 @@ sap.ui.define([
               const oTable = this._getItemsTable(true); // get inner table
               
               if (oTable && !this._bTableListenerAttached) {
-                  // Attach to the table's native data update loop
+                  // Attach to the table's native data update loop to implement row select
                   oTable.attachUpdateFinished(this.onTableUpdateFinished, this);
                   this._bTableListenerAttached = true; 
               }
@@ -119,12 +119,20 @@ sap.ui.define([
               // 2. Attach a simple, isolated click listener to the row
               oItem.addEventDelegate({
                   onclick: function(oBrowserEvent) {
-                      // Stop Fiori Elements from running its internal crashing code
-                      oBrowserEvent.stopPropagation();
-                      oBrowserEvent.preventDefault();
-                      
-                      // Call your dialog handler
-                      that.onItemRowPress(oItem);
+                    //if user clicked on the checkbox, let it go  
+                    //var bClickedOnCheckbox = jQuery(oBrowserEvent.target)[0].innerHTML.indexOf("CheckBox")>=0; //jQuery(oBrowserEvent.target).closest(".sapMListTOC").length > 0;
+                    let oClickedControl = oBrowserEvent.srcControl || sap.ui.getCore().byId(oBrowserEvent.target.id);
+                    if (oClickedControl) {
+                        let sMetadataName = oClickedControl.getMetadata().getName();   //'sap.m.CheckBox'
+                        if (sMetadataName.indexOf("CheckBox") >= 0 || sMetadataName.indexOf("SelectionCell") >= 0) {
+                            return;
+                        }
+                    }
+                    //stop normal click behaviour
+                    oBrowserEvent.stopPropagation();
+                    oBrowserEvent.preventDefault();
+                    //open edit item dialog
+                    that.onItemRowPress(oItem);
                   }
               }, that);
               oItem._bCustomClickBound = true; // Lock the row so we never double-bind it
@@ -214,7 +222,8 @@ _openEditDialog: function (oContext) {
             oldValue:           oEquipData[cfg.EquipField],     // always master data
             oldValueText:       oEquipData[cfg.EquipFieldText],
             newValue:           sPrefillValue,
-            initialValue:       sPrefillValue,  // to check changes later
+            initialValue:       sPrefillValue,  // changes made in this session
+            equipField:         cfg.EquipField,
             valueHelpEntity:    cfg.VhEntity,
             valueHelpKeyField:  cfg.VhKeyField,
             valueHelpDescField: cfg.VhDescField,
@@ -283,14 +292,27 @@ _openEditDialog: function (oContext) {
     let oModel = this._oDialog.getModel("dlg");
     oModel.setProperty(sPath, sNewValue);
   },
+
+  onCancelEquipDialog:function(oEvent){
+    let oInnerTable = this._getItemsTable(true);
+    if (oInnerTable) {
+      oInnerTable.removeSelections();
+      oInnerTable.fireSelectionChange();
+    }
+    if (this._oDialog){
+        this._oDialog.close();
+    }
+  },
+
   
   formatColumns: function(sStatus) {
       return "Information"; //"Error"
   },
 
   
-  //---- SAVE ---------------------------
-
+//────────────────────────────────────────
+// Save Equipment Changes to Item
+//────────────────────────────────────────
   onSaveAndApprove: function(oEvent){
     this._saveEquipChanges(true); // pass Approve = true through
   },
@@ -301,7 +323,7 @@ _openEditDialog: function (oContext) {
 
   _saveEquipChanges: function (bApproveFlag) {
     const aRows = this._oDialogModel.getProperty("/fields");
-    const aChangedRows = aRows.filter(r => r.newValue !== r.initialValue);
+    const aChangedRows = aRows.filter(r => r.newValue !== r.initialValue);   //only save fields that changed in this session
 
     const oModel = this.getView().getModel();
     const oItemContext = this._oItemContext;
@@ -342,7 +364,7 @@ _openEditDialog: function (oContext) {
     if (aChangedRows.length > 0) {
       aCalls = aChangedRows.map((row, i) =>
         buildSingleCall(
-          row.fieldName, row.oldValue, row.newValue, row.equipmentField, i === 0 ? bApproveFlag : false
+          row.fieldName, row.oldValue, row.newValue, row.equipField, i === 0 ? bApproveFlag : false
         )
       );
     } else {
@@ -370,21 +392,75 @@ _openEditDialog: function (oContext) {
     
   },
 
+  
+//────────────────────────────────────────
+// Validate against EMR
+//────────────────────────────────────────
+onValidateEquipChanges: function () {
+  const aRows = this._oDialogModel.getProperty("/fields");
+  const aChangedRows = aRows.filter(r => r.newValue !== r.oldValue);  //validate only fields that have different values than master data
 
+  if (aChangedRows.length === 0) {
+    MessageToast.show("No changes to validate.");
+    return;
+  }
 
-  onCancelEquipDialog:function(oEvent){
-    let oInnerTable = this._getItemsTable(true);
-    if (oInnerTable) {
-      oInnerTable.removeSelections();
-      oInnerTable.fireSelectionChange();
+  const oModel        = this.getView().getModel();
+  const oItemContext  = this._oItemContext;
+  const sActionName   = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.validateEquipmentChanges";
+
+  sap.ui.getCore().getMessageManager().removeAllMessages();
+
+  this.base.editFlow.securedExecution(
+    () => {
+      // chain all validations sequentially inside one securedExecution
+      // so lock is acquired once and held for all calls
+      return aChangedRows.reduce((oPromise, r) => {
+        return oPromise.then(() => {
+          const oBinding = oModel.bindContext(
+            sActionName + "(...)",
+            oItemContext
+          );
+          oBinding.setParameter("FieldName",      r.fieldName        || "");
+          oBinding.setParameter("OldValue",       r.oldValue         || "");
+          oBinding.setParameter("NewValue",       r.newValue         || "");
+          oBinding.setParameter("EquipField",     r.equipField   || "");
+          oBinding.setParameter("Equipment",      oItemContext.getProperty("Equipment") || "");
+          oBinding.setParameter("EqCondition",    this._oDialogModel.getProperty("/eqCondition") || "");
+          oBinding.setParameter("Comments",       this._oItemContext.getProperty("Comments") || "");
+          oBinding.setParameter("ExceptionType",  this._oDialogModel.getProperty("/ExceptionType") || "");
+          oBinding.setParameter("Approve",        false);
+          return oBinding.execute();
+        });
+      }, Promise.resolve());
+    },
+    { 
+      updatableObject: oItemContext,
+      busyControl: this.getView()
     }
-    if (this._oDialog){
-        this._oDialog.close();
+  ),then(() => {
+    const aMessages = sap.ui.getCore()
+      .getMessageManager()
+      .getMessageModel()
+      .getData();
+
+    const aErrors = aMessages.filter(m => m.type === "Error" || m.type === "error");
+
+    if (aErrors.length === 0) {
+      MessageBox.success(
+        "All changed values validated successfully.\n\nNo errors found.",
+        { title: "Validation Passed" }
+      );
     }
-  },
+    // errors are already shown by securedExecution in the message popover
+  });
+},
 
-  //--- VH --------------
 
+
+//────────────────────────────────────────
+// Value Help
+//────────────────────────────────────────
   onGenericVH: function (oEvent) {
     const oInput = oEvent.getSource();
     const oRowContext = oInput.getBindingContext("dlg");
@@ -752,25 +828,6 @@ onClearSearchFilter: function (oEvent, aContexts)  {
 },
 
 
-isPostToEMREnabled: function(oContext) {
-  debugger;
-  // Return false if context isn't loaded yet
-  if (!oContext) {
-      return false;
-  }
-
-  // Extract the AuditStatus field from the current OData record
-  var sStatus = oContext.getProperty("AuditStatus");
-
-  // Disable button (return false) if status is COMPLETE, DELETED, or NEW
-  if (sStatus === "040" || sStatus === "050" || sStatus === "010") {
-      return false;
-  }
-
-  // Enable button for all other statuses
-  return true;
-},
-
 
 //────────────────────────────────────────
 // Post to EMR, Complete Audit Header
@@ -844,6 +901,7 @@ _executePostToEMR: function () {
   });
   // no .catch() at all - securedExecution handles error display automatically
 },
+
 
 //────────────────────────────────────────
 // Add Equipment
