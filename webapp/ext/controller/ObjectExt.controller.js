@@ -620,6 +620,7 @@ onValidateEquipChanges: function () {
   _onScanSuccess: function (mResult) {
     if (mResult.cancelled) {
         MessageToast.show("Scan cancelled", { duration: 1000 });
+
     } else {
       var sEquipment = mResult.text;
       var oExtensionAPI = this.base.getExtensionAPI();
@@ -702,9 +703,8 @@ _searchEquipmentMaster: function (sEquipment) {
     "/ZQMM_R_Equip_BarcodeTR",
     null,
     [],
-    [ new Filter("Equipment", FilterOperator.EQ,
-        sEquipment.padStart(18, '0')) ],  // pad to 18 chars for EQUNR format
-    { $select: "Equipment,EquipmentName,MaintPlant,Location,AssetRoom" }
+    [ new Filter("Equipment", FilterOperator.EQ, sEquipment.padStart(18, '0')) ],  // pad to 18 chars for EQUNR format
+    { $select: "Equipment,EquipmentName,MaintPlant,PlantName,Location,LocationName,AssetRoom" }
   );
 
   oListBinding.requestContexts(0, 1).then(aContexts => {
@@ -732,25 +732,29 @@ _showEquipmentFoundConfirmation: function (sEquipment, oEquip) {
   const sDisplayEquip = sEquipment.replace(/^0+/, ''); // strip leading zeros for display
 
   const sMessage =
-    `Equipment found in SAP master data:\n\n` +
-    `Equipment:         ${sDisplayEquip} - ${oEquip.EquipmentName || ''}\n` +
-    `Maintenance Plant: ${oEquip.MaintPlant || '(not set)'}\n` +
-    `Asset Location:    ${oEquip.Location    || '(not set)'}\n` +
-    `Asset Room:        ${oEquip.AssetRoom         || '(not set)'}\n\n` +
-    `Would you like to add this equipment to the audit?`;
+    `Equipment is not in this Audit, but was found in SAP master data:\n\n` +
+    `Equipment:\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0 ${sDisplayEquip} - ${oEquip.EquipmentName || ''}\n` +
+    `Maint.Plant:\u00A0\u00A0\u00A0\u00A0\u00A0 ${oEquip.MaintPlant || ''} - ${oEquip.PlantName || ''}\n` +
+    `Asset Location: ${oEquip.Location || ''} - ${oEquip.LocationName || ''}\n` +
+    `Asset Room:\u00A0\u00A0\u00A0\u00A0 ${oEquip.AssetRoom || ''}\n\n` +
+    `Would you like to add this equipment to the Audit?\n\n`;
 
   MessageBox.confirm(sMessage, {
     title: "Equipment Found in SAP",
     contentWidth: "500px",
-    actions: ["Add to Audit", "Retry Scan", MessageBox.Action.CANCEL],
+    actions: ["Add to Audit", "Retry Scan", "Manual Search", MessageBox.Action.CANCEL],
     emphasizedAction: "Add to Audit",
     onClose: (sAction) => {
       if (sAction === "Add to Audit") {
         this._addEquipmentToAudit(oEquip.Equipment);
+
       } else if (sAction === "Retry Scan") {
         MessageToast.show("Ready to scan. Please scan the barcode again.");
         this.onBarcodeScan();
+      } else if (sAction === "Manual Search") {
+        this.onAddEquipmentOpen();
       }
+
       // CANCEL: do nothing
     }
   });
@@ -786,7 +790,7 @@ _showNotInSAPConfirmation: function (sEquipment) {
 //────────────────────────────────────────
 //────────────────────────────────────────
 onClearSearchFilter: function (oEvent, aContexts)  {
-  // 1. Visual Fix: Turn the text button into an icon on the fly
+  // Visual Fix: Turn the text button into an icon on the fly
   const oTable = this._getItemsTable();
   const sButtonId =  oTable.getId() + "::CustomAction::ClearSearchFilterAction";
   var oButton = this.getView().byId(sButtonId) || sap.ui.getCore().byId(sButtonId);
@@ -804,6 +808,10 @@ onClearSearchFilter: function (oEvent, aContexts)  {
   }
 },
 
+
+//────────────────────────────────────────
+//  Highlight row 
+//────────────────────────────────────────
 _highlightItemRow(oContext, bOpenEditDialog){
   if (oContext) {
     var oData = oContext.getObject();
@@ -831,7 +839,6 @@ _highlightItemRow(oContext, bOpenEditDialog){
           if (typeof oTable.setSelectedItem === "function") {
             oTable.setSelectedItem(oRowToSelect, true);
             oTable.fireSelectionChange();
-
             if (bOpenEditDialog){
               this._openEditDialog(oContext);
             }
@@ -1012,6 +1019,7 @@ _addEquipmentToAudit: function (sEquipment) {
       let itemNumber = oEvent.getParameter("context").getObject().ItemNumber || "";
       MessageToast.show("Equipment " + sEquipment + " added to audit. Item # " + itemNumber);
       oHeaderContext.requestSideEffects(["_AuditItems"]);
+
     } else {
       // delete the failed transient context to stop retry loop
       oNewItemContext.delete("$auto").catch(() => {});
@@ -1030,6 +1038,28 @@ _addEquipmentToAudit: function (sEquipment) {
 },
 
 
+
+//────────────────────────────────────────
+//  Update item core values automatically 
+//────────────────────────────────────────
+_updateCoreValues(sEquipment, oHeaderContext){
+debugger;
+  var oHeader = oHeaderContext.getObject();
+  var oItem = {
+    Equipment: sEquipment,
+    MaintPlant: '',
+    AssetRoom:  '',
+    AssetLocation:  '',
+    FunctionalLocation: ''
+  }
+
+  if (oHeader.MaintPlant && oItem.MaintPlant && oHeader.MaintPlant !== oItem.MaintPlant) {
+    oItem.MaintPlant = oHeader.MaintPlant;
+    bItemUpdated = true;
+  }
+
+
+},
 
 
 //────────────────────────────────────────
