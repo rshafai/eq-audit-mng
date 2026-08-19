@@ -165,13 +165,24 @@
               "content": {
                 "header": {
                   "actions": {
+                    "ApproveAllItems": {
+                      "id": "ApproveAllItems",
+                      "requiresSelection": true,
+                      "text": "Approve Items",
+                      "tooltip": "Approve all Items",
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onApproveAllItems",
+                      "visible": "{= ${isEditable} && ${isSupervisor} }",
+                      "enabled": true,
+                      "icon": "sap-icon://refresh"
+                    },
                     "PostAuditDocument": {
-                      "text": "Post to EMR",
+                      "text": "Post to EMR {isCompletable}",
                       "type": "Emphasized",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onPostAuditDocument",
-                      "visible": "{isSupervisor}",
+                      "visible": "{= ${isEditable} && ${isSupervisor} }",
                       "enabled": "{isCompletable}"
                     }
+                    
                   }
                 }
               },
@@ -236,13 +247,13 @@
                       "visible": "{isEditable}",
                       "enabled": "{= ${isEditable} === true && ${ui>/showEdit} === true }"
                     },
-                    "ApproveItem": {
-                      "id": "ApproveItem",
+                    "ApproveMultipleItems": {
+                      "id": "ApproveMultipleItems",
                       "requiresSelection": true,
                       "text": "Approve Items",
-                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onApproveItems",
-                      "visible": "{= ${isEditable} === true && ${ui>/showApprove} === true }",
-                      "enabled": true
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onApproveMultipleItems",
+                      "visible": false,
+                      "enabled": "{isCompletable}"
                     },
                     "NotInSAP": {
                       "id": "NotInSAP",

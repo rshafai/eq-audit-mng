@@ -44,18 +44,46 @@ sap.ui.define([
                 // showApprove: false
               });
               this.getView().setModel(oUIModel, "ui");
+
+
+              //Make rows clickable
+              const oTableInner = this._getItemsTable(true); // get inner table
+              const oTable = this._getItemsTable(); 
+debugger;
+              if (oTable) {
+                if (oTableInner) {
+                  // Captures the rapid local VS Code environment instantly
+                  oTableInner.attachUpdateFinished(this.onTableUpdateFinished, this);
+                } else {
+                  // Captures the Fiori Launchpad environment 
+                  oTable.attachRowPress(this._onTableRowClick, this);
+                }
+                  // // Fallback: If VS Code or FLP ever delay the inner table initialization,
+                  // // wait for the outer table's next structural lifecycle update to capture it.
+                  // if (oTable) {
+                  //     oTable.attachEventOnce("modelContextChange", function() {
+                  //         const oDelayedInner = this._getItemsTable(true);
+                  //         if (oDelayedInner) {
+                  //             oDelayedInner.attachUpdateFinished(this.onTableUpdateFinished, this);
+                  //         }
+                  //     }.bind(this));
+                  // }
+              }
             },
 
 
             onAfterRendering: function() {
-              const oTable = this._getItemsTable(true); // get inner table
-              
-              if (oTable && !this._bTableListenerAttached) {
-                  // Attach to the table's native data update loop to implement row select
-                  oTable.attachUpdateFinished(this.onTableUpdateFinished, this);
-                  this._bTableListenerAttached = true; 
-              }
-          },
+              //Icon for Approve all
+              const sViewId = this.getView().getId();
+              const oApproveButton = this.getView().byId(sViewId + "--fe::CustomAction::ApproveAllItems");
+              if (oApproveButton && typeof oApproveButton.setIcon === "function") {
+                oApproveButton.setIcon("sap-icon://flag");
+                oApproveButton.setText(""); 
+                oApproveButton.setType("Success"); 
+                oApproveButton.setTooltip("Approve all Pending items in this Audit");
+                oApproveButton.setEnabled(true);
+              }            
+            },
 
             routing: {
 
@@ -74,28 +102,6 @@ sap.ui.define([
                   oTable.attachSelectionChange(this.onTableSelectionChange, this);
                   this._bSelectionAttached = true;
 
-                  // //Make rows clickable
-                  // oTable = this._getItemsTable(true);  //get inner table
-                  // var that = this;
-                  // if (oTable && !this._bRowPressAttached) {
-                  //   oTable.attachEventOnce("itemPress", this.onItemRowPress, this);
-                  //   this._bRowPressAttached = true;  // attach once only
-                  //   oTable.addEventDelegate({
-                  //     onAfterRendering: function() {
-                  //       var aItems = oTable.getItems();
-                  //       aItems.forEach(function(oItem) {
-                  //           if (oItem.setType) {
-                  //               oItem.setType("Navigation"); // Forces cursor pointer and active click styles
-                  //               oItem.attachEventOnce("press", function(oEvent){
-                  //                 that.onItemRowPress(oEvent);
-                  //               });
-                  //           }
-                  //       });
-                  //     }
-                  //   });
-                  // }
-
-
                   //Initialize table
                   this.onClearSearchFilter();
                 }
@@ -104,8 +110,22 @@ sap.ui.define([
           } // routing
         }, // override
 
+        _onTableRowClick: function (oEvent) {
+          // Get the binding context of the row that was pressed
+debugger;
+          var oContext = oEvent.getParameter("bindingContext");
+          if (!oContext) { return; }
+          
+          this._bApprovalMode = false;
+          this.getView().setBusy(true);
+          this._openEditDialog(oContext);
+      
+        },
+
   onTableUpdateFinished: function(oEvent) {
-      const oTable = oEvent.getSource();
+//--- NOT USED
+
+    const oTable = oEvent.getSource();
       var aItems = oTable.getItems();
       var that = this;
   
@@ -140,6 +160,7 @@ sap.ui.define([
       });
   },
   onItemRowPress: function (oClickedRow) {
+    //--- NOT USED
     var oRowContext = oClickedRow.getBindingContext();
     if (!oRowContext) { return; }
   
@@ -154,18 +175,18 @@ sap.ui.define([
       const oUiModel = this.getView().getModel("ui");
 
       let showEdit = false;
-      let showApprove = false;
+      // let showApprove = false;
 
       if (aSelectedContexts.length === 1) {
           const oSelectedData = aSelectedContexts[0].getObject(); 
           const sStatus = oSelectedData.AuditItemStatus;
           showEdit = true; 
-          showApprove = (sStatus !== "030");  //Audited
+          //showApprove = (sStatus !== "030");  //Audited
       } else {
-        showApprove = true;
+        //showApprove = true;
       }
       oUiModel.setProperty("/showEdit", showEdit);
-      oUiModel.setProperty("/showApprove", showApprove);
+      //oUiModel.setProperty("/showApprove", showApprove);
   },
 
   
@@ -203,40 +224,59 @@ onEditEquipmentValues: function (oEvent, aContexts) {
     this._openEditDialog(aContexts[0]);
 },
 
-_openEditDialog: function (oContext) {
+_openEditDialog: function (oContext, bFromScan) {
     this.getView().setBusy(true);
-    const oEquipData = oContext.getObject();
+    this._bFromScan    = bFromScan || false;
+    const oEquipData   = oContext.getObject();
+    const oHeaderData  = this.getView().getBindingContext().getObject();
+    const oModel       = this.getView().getModel();
+    //fetch existing change rows for this equipment
     const oChangeListBinding = oContext.getModel().bindList("_AuditChanges", oContext);
 
     oChangeListBinding.requestContexts(0, 100).then(aChangeContexts => {
       const aExistingChanges = aChangeContexts.map(c => c.getObject());
 
       this._getFieldConfig().then(aFieldConfig => {
-
         const aRows = aFieldConfig.map(cfg => {
           const oExisting = aExistingChanges.find(c => c.FieldName === cfg.FieldName);
-          const sPrefillValue = oExisting ? oExisting.NewValue : oEquipData[cfg.EquipField];
+
+          let sPrefillValue;
+          const sHeaderValue = oHeaderData[cfg.EquipField];
+          const sMasterValue = oEquipData[cfg.EquipField];
+
+          if (this._bFromScan && oHeaderData && cfg.CoreFlag) {
+            //Prefill with Audit header core data if different from master data
+            //otherwise, prior user chanegs, or master data value
+            sPrefillValue = (sHeaderValue && sHeaderValue !== sMasterValue)
+                            ? sHeaderValue
+                            : (oExisting ? oExisting.NewValue : sMasterValue);
+          } else {
+            //Prior changes or master data
+            sPrefillValue = (oExisting ? oExisting.NewValue : sMasterValue);
+          }
+          let sInitialValue = (oExisting ? oExisting.NewValue : sMasterValue);
+
           return {
             fieldName:          cfg.FieldName,
+            core_flag:          cfg.CoreFlag,
             label:              cfg.LabelEn,
             oldValue:           oEquipData[cfg.EquipField],     // always master data
             oldValueText:       oEquipData[cfg.EquipFieldText],
             newValue:           sPrefillValue,
-            initialValue:       sPrefillValue,  // changes made in this session
+            initialValue:       sInitialValue,  // changes made in this session
             equipField:         cfg.EquipField,
             valueHelpEntity:    cfg.VhEntity,
             valueHelpKeyField:  cfg.VhKeyField,
             valueHelpDescField: cfg.VhDescField,
-            //approvalMode:       this._SuperMode
           };
         });
 
         this._oDialogModel = new JSONModel({
           fields:       aRows,
           approvalMode: !!this._SuperMode,
-          Comments:     oEquipData.Comments     || "",
-          EqCondition:  oEquipData.EqCondition  || "",
-          Equipment:    oEquipData.Equipment    || "",
+          Comments:     oEquipData.Comments        || "",
+          EqCondition:  oEquipData.EqCondition     || "",
+          Equipment:    oEquipData.Equipment       || "",
           ExceptionType:  oEquipData.ExceptionType || ""  
         });
 
@@ -247,6 +287,13 @@ _openEditDialog: function (oContext) {
           oDialog.setBindingContext(oContext, "itemCtx");
           oDialog.setModel(this._oDialogModel, "dlg");
           oDialog.open();
+
+          if (this._bFromScan){
+            //-- Automatically trigger save !!--
+            //----   this._saveEquipChanges(false);   //false: no approval
+          }
+
+
         }).catch(oErr => {
           MessageBox.error("Could not load equipment data: " + oErr.message);
         }).finally(() => {
@@ -323,73 +370,60 @@ _openEditDialog: function (oContext) {
 
   _saveEquipChanges: function (bApproveFlag) {
     const aRows = this._oDialogModel.getProperty("/fields");
-    const aChangedRows = aRows.filter(r => r.newValue !== r.initialValue);   //only save fields that changed in this session
-
-    const oModel = this.getView().getModel();
-    const oItemContext = this._oItemContext;
+    const aChangedRows = aRows.filter(r => r.newValue !== r.initialValue);
+  
+    const oModel        = this.getView().getModel();
+    const oItemContext  = this._oItemContext;
     const oHeaderContext = this.getView().getBindingContext();
-    const sException  = this._oDialogModel.getProperty("/ExceptionType");     
-    const sComments   = this._oDialogModel.getProperty("/Comments");     
-    const sEquipment  = this._oDialogModel.getProperty("/Equipment");   
-    const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges";
+    const sException    = this._oDialogModel.getProperty("/ExceptionType");
+    const sComments     = this._oDialogModel.getProperty("/Comments");
+    const sEquipment    = this._oDialogModel.getProperty("/Equipment");
+    const sActionName   = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.saveEquipmentChanges";
   
-    //Validations
-    if (sException && sException !=='000' && !sComments) {
-      MessageBox.error( "Comments are required when an Exception Type is selected." );
-      return;  
+    if (sException && sException !== '000' && !sComments) {
+      MessageBox.error("Comments are required when an Exception Type is selected.");
+      return;
     }
-
-    const buildSingleCall = (fieldName, oldValue, newValue, equipField, bApproveFlag) => {
-      return this.base.editFlow.securedExecution(
-        () => {
-          const oBinding = oModel.bindContext( sActionName + "(...)", oItemContext );
-          oBinding.setParameter("FieldName",      fieldName   || "");
-          oBinding.setParameter("OldValue",       oldValue    || "");
-          oBinding.setParameter("NewValue",       newValue    || "");
-          oBinding.setParameter("EquipField",     equipField  || "");
-          oBinding.setParameter("Equipment",      sEquipment  || "");
-          oBinding.setParameter("EqCondition",    this._oDialogModel.getProperty("/EqCondition")  || "");
-          oBinding.setParameter("Comments",       sComments   || "");
-          oBinding.setParameter("ExceptionType",  sException  || "");
-          oBinding.setParameter("Approve",        !!bApproveFlag);
-          return oBinding.execute();
-        },
-        {
-          updatableObject: oItemContext, busyControl: this.getView()
-        }
-      );
-    };
   
-    let aCalls;
-    if (aChangedRows.length > 0) {
-      aCalls = aChangedRows.map((row, i) =>
-        buildSingleCall(
-          row.fieldName, row.oldValue, row.newValue, row.equipField, i === 0 ? bApproveFlag : false
-        )
-      );
-    } else {
-      aCalls = [ buildSingleCall("", "", "", "", bApproveFlag) ];
-    }
-
-    this._oDialog.setBusy(true);  // the framework sets the main page busy, but not the dialog
-    Promise.all(aCalls).then(() => {
+    // format: FieldName|OldValue|NewValue|EquipField~FieldName|OldValue|NewValue|EquipField
+    const sChangesCSV = aChangedRows
+      .map(r => [
+        r.fieldName  || "",
+        r.oldValue   || "",
+        r.newValue   || "",
+        r.equipField || ""
+      ].join("|"))
+      .join("~");
+  
+    this._oDialog.setBusy(true);
+  
+    // single securedExecution, single action call, one $batch POST
+    this.base.editFlow.securedExecution(
+      () => {
+        const oBinding = oModel.bindContext(
+          sActionName + "(...)", oItemContext
+        );
+        oBinding.setParameter("Equipment",    sEquipment || "");
+        oBinding.setParameter("EqCondition",  this._oDialogModel.getProperty("/EqCondition") || "");
+        oBinding.setParameter("Comments",     sComments  || "");
+        oBinding.setParameter("ExceptionType", sException || "");
+        oBinding.setParameter("Approve",      !!bApproveFlag);
+        oBinding.setParameter("AutoAudit",    !!this._bFromScan);
+        oBinding.setParameter("ChangesCSV",   sChangesCSV);  // all changes in one string
+        return oBinding.execute();
+      },
+      { updatableObject: oItemContext }
+    ).then(() => {
       this._oDialog.setBusy(false);
-      MessageToast.show(bApproveFlag ? "Item approved." : "Changes saved for Equipment: "+ sEquipment );
-      this.onCancelEquipDialog();  //this._oDialog.close();
+      MessageToast.show(bApproveFlag ? "Item approved." : "Changes saved for Equipment: " + sEquipment);
+      this.onCancelEquipDialog();
       this._oItemContext.refresh();
-      // this._oItemContext.requestSideEffects([  "EqCondition", "Comments",
-      //   "AuditItemStatus", "AuditItemStatusText", "AuditItemStatusCriticality", "LastChangedAt", "_Change", "_ExceptionType"
-      // ]);
       oHeaderContext.refresh();
-      // oHeaderContext.requestSideEffects([   //doesnt work in on-prem when operation was at item level 
-      //   "AuditHeaderStatus",
-      //   "_AuditItems"
-      // ]);
-    }).catch(oErr => { 
+
+    }).catch(oErr => {
       this._oDialog.setBusy(false);
-      MessageBox.error((bApproveFlag ? "Approval" : "Save") + " failed: " + oErr.message);
+      MessageBox.error("Save operation failed: " + oErr.message);
     });
-    
   },
 
   
@@ -405,54 +439,53 @@ onValidateEquipChanges: function () {
     return;
   }
 
-  const oModel        = this.getView().getModel();
-  const oItemContext  = this._oItemContext;
-  const sActionName   = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.validateEquipmentChanges";
+  const oModel       = this.getView().getModel();
+  const oItemContext = this._oItemContext;
+  const sEquipment   = this._oDialogModel.getProperty("/Equipment");
+  const sActionName  = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.validateEquipmentChanges";
+
+  const sChangesCSV = aChangedRows
+    .map(r => [
+      r.fieldName  || "",
+      r.oldValue   || "",
+      r.newValue   || "",
+      r.equipField || ""
+    ].join("|"))
+    .join("~");
 
   sap.ui.getCore().getMessageManager().removeAllMessages();
 
+  //single securedExecution, single call, one $batch POST
   this.base.editFlow.securedExecution(
     () => {
-      // chain all validations sequentially inside one securedExecution
-      // so lock is acquired once and held for all calls
-      return aChangedRows.reduce((oPromise, r) => {
-        return oPromise.then(() => {
-          const oBinding = oModel.bindContext(
-            sActionName + "(...)",
-            oItemContext
-          );
-          oBinding.setParameter("FieldName",      r.fieldName        || "");
-          oBinding.setParameter("OldValue",       r.oldValue         || "");
-          oBinding.setParameter("NewValue",       r.newValue         || "");
-          oBinding.setParameter("EquipField",     r.equipField   || "");
-          oBinding.setParameter("Equipment",      oItemContext.getProperty("Equipment") || "");
-          oBinding.setParameter("EqCondition",    this._oDialogModel.getProperty("/eqCondition") || "");
-          oBinding.setParameter("Comments",       this._oItemContext.getProperty("Comments") || "");
-          oBinding.setParameter("ExceptionType",  this._oDialogModel.getProperty("/ExceptionType") || "");
-          oBinding.setParameter("Approve",        false);
-          return oBinding.execute();
-        });
-      }, Promise.resolve());
+      const oBinding = oModel.bindContext(
+        sActionName + "(...)", oItemContext
+      );
+      oBinding.setParameter("Equipment",    sEquipment || "");
+      oBinding.setParameter("EqCondition",  this._oDialogModel.getProperty("/EqCondition") || "");
+      oBinding.setParameter("Comments",     this._oDialogModel.getProperty("/Comments") || "");
+      oBinding.setParameter("ExceptionType", this._oDialogModel.getProperty("/ExceptionType") || "");
+      oBinding.setParameter("ChangesCSV",   sChangesCSV);  // all changes in one string
+      oBinding.setParameter("Approve",     false);
+      oBinding.setParameter("AutoAudit",   false);
+      return oBinding.execute();
     },
-    { 
-      updatableObject: oItemContext,
-      busyControl: this.getView()
-    }
-  ),then(() => {
+    { updatableObject: oItemContext, busyControl: this.getView() }
+  ).then(() => {
     const aMessages = sap.ui.getCore()
       .getMessageManager()
       .getMessageModel()
       .getData();
 
-    const aErrors = aMessages.filter(m => m.type === "Error" || m.type === "error");
+    const aErrors = aMessages.filter(m =>
+      m.type === "Error" || m.type === "error"
+    );
 
     if (aErrors.length === 0) {
-      MessageBox.success(
-        "All changed values validated successfully.\n\nNo errors found.",
+      MessageBox.success( "All changed values validated successfully.\n\nNo errors found.",
         { title: "Validation Passed" }
       );
     }
-    // errors are already shown by securedExecution in the message popover
   });
 },
 
@@ -538,7 +571,7 @@ onValidateEquipChanges: function () {
 //────────────────────────────────────────  
 // Approve Multiple Items
 //────────────────────────────────────────
-  onApproveItems: function (oEvent, aContexts) {
+  onApproveMultipleItems: function (oEvent, aContexts) {
     if (!aContexts) { return; }
     if (aContexts.length === 0) {
         MessageToast.show("Please select at least one item.");
@@ -622,7 +655,7 @@ onValidateEquipChanges: function () {
         MessageToast.show("Scan cancelled", { duration: 1000 });
 
     } else {
-      var sEquipment = mResult.text;
+      var sEquipment = mResult.text.trim();
       var oExtensionAPI = this.base.getExtensionAPI();
       var oTable = this._getItemsTable();
 
@@ -659,13 +692,16 @@ _itemSearchServer: function(sEquipment){
       this._bBarCodeSearch = true;
       oRowBinding.detachEvent("change", this._onTableDataChanged, this);
       oRowBinding.attachEvent("change", this._onTableDataChanged, this);
-      //oRowBinding.attachEvent("dataReceived", this._onTableDataReceived, this);
+      oRowBinding.attachEvent("dataReceived", this._onTableDataReceived, this);
 
       //Force trigger item search
       oRowBinding.changeParameters({ "$search": sEquipment});  //force trigger search 
     }
 },
 
+_onTableDataReceived: function(oEvent){
+  
+},
 _onTableDataChanged: function(oEvent){
   //Search all items to find a barcode
   if (this._bBarCodeSearch === false) { return; }
@@ -798,7 +834,7 @@ onClearSearchFilter: function (oEvent, aContexts)  {
     oButton.setIcon("sap-icon://refresh");
     oButton.setText(""); 
   }
-
+  
   var oRowBinding = oTable.getRowBinding();
   if (oRowBinding) {
         oRowBinding.changeParameters({
@@ -840,7 +876,7 @@ _highlightItemRow(oContext, bOpenEditDialog){
             oTable.setSelectedItem(oRowToSelect, true);
             oTable.fireSelectionChange();
             if (bOpenEditDialog){
-              this._openEditDialog(oContext);
+              this._openEditDialog(oContext, true);   //true: from Scan
             }
           }
         }
@@ -900,8 +936,6 @@ _executePostToEMR: function () {
   const oModel = this.getView().getModel();
   const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.postToEMR";
 
-  
-
   this.base.editFlow.securedExecution(
     () => {
       sap.ui.getCore().getMessageManager().removeAllMessages();
@@ -917,9 +951,47 @@ _executePostToEMR: function () {
       busyControl: this.getView()
     }
   ).then(() => {
-    // action succeeded - framework already showed the success message
-    // just refresh side effects
+    //Remove confirmation message, it gets stuck in buffer
+    const oMessage = sap.ui.getCore().getMessageManager().getMessageModel().getData().filter(m => m.code.includes("ZQMM_AUDIT/021")).pop();
+    if (oMessage) {
+      sap.ui.getCore().getMessageManager().removeMessages(oMessage);
+    }
+    //Remove success messages if there is an error.
     oHeaderContext.refresh();
+  });
+  // no .catch() at all - securedExecution handles error display automatically
+},
+
+
+//────────────────────────────────────────  
+// Approve All Items
+//────────────────────────────────────────
+onApproveAllItems: function (oContext) {
+  const oHeaderContext = this.getView().getBindingContext();
+  const oModel = this.getView().getModel();
+  const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.approveAllItems";
+
+  this.base.editFlow.securedExecution(
+    () => {
+      sap.ui.getCore().getMessageManager().removeAllMessages();
+      const oBinding = oModel.bindContext(
+        sActionName + "(...)",
+        oHeaderContext
+      );
+      return oBinding.execute();
+    },
+    {
+      updatableObject: oHeaderContext,
+      busyControl: this.getView()
+    }
+  ).then(() => {
+    //Remove confirmation message, it gets stuck in buffer
+    const oMessage = sap.ui.getCore().getMessageManager().getMessageModel().getData().filter(m => m.code.includes("ZQMM_AUDIT/021")).pop();
+    if (oMessage) {
+      sap.ui.getCore().getMessageManager().removeMessages(oMessage);
+    }
+    oHeaderContext.refresh();
+
   });
   // no .catch() at all - securedExecution handles error display automatically
 },
@@ -1035,30 +1107,6 @@ _addEquipmentToAudit: function (sEquipment) {
   const oNewItemContext = oListBinding.create({
     Equipment: sEquipment
   });
-},
-
-
-
-//────────────────────────────────────────
-//  Update item core values automatically 
-//────────────────────────────────────────
-_updateCoreValues(sEquipment, oHeaderContext){
-debugger;
-  var oHeader = oHeaderContext.getObject();
-  var oItem = {
-    Equipment: sEquipment,
-    MaintPlant: '',
-    AssetRoom:  '',
-    AssetLocation:  '',
-    FunctionalLocation: ''
-  }
-
-  if (oHeader.MaintPlant && oItem.MaintPlant && oHeader.MaintPlant !== oItem.MaintPlant) {
-    oItem.MaintPlant = oHeader.MaintPlant;
-    bItemUpdated = true;
-  }
-
-
 },
 
 

@@ -89,7 +89,7 @@
       <Table items="{dlg>/fields}" growing="false" visible="{= !(${dlg>/ExceptionType}==='030')}" class="sapUiSmallMarginBottom sapUiSmallMarginTop">
         <columns>
           <Column><Text text="Field" /></Column>
-          <Column><Text text="Current Value" /></Column>
+          <Column><Text text="Current Value in SAP" /></Column>
           <Column width="30px"></Column>
           <Column><Text text="New Value" /></Column>
         </columns>
