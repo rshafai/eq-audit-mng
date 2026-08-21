@@ -167,9 +167,8 @@
                   "actions": {
                     "ApproveAllItems": {
                       "id": "ApproveAllItems",
-                      "requiresSelection": true,
+                      "requiresSelection": false,
                       "text": "Approve Items",
-                      "tooltip": "Approve all Items",
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onApproveAllItems",
                       "visible": "{= ${isEditable} && ${isSupervisor} }",
                       "enabled": true,

@@ -81,7 +81,6 @@ debugger;
                 oApproveButton.setText(""); 
                 oApproveButton.setType("Success"); 
                 oApproveButton.setTooltip("Approve all Pending items in this Audit");
-                oApproveButton.setEnabled(true);
               }            
             },
 
@@ -104,27 +103,27 @@ debugger;
 
                   //Initialize table
                   this.onClearSearchFilter();
+
+                  
                 }
             }
 
           } // routing
         }, // override
 
-        _onTableRowClick: function (oEvent) {
-          // Get the binding context of the row that was pressed
-debugger;
-          var oContext = oEvent.getParameter("bindingContext");
-          if (!oContext) { return; }
-          
-          this._bApprovalMode = false;
-          this.getView().setBusy(true);
-          this._openEditDialog(oContext);
-      
-        },
+  _onTableRowClick: function (oEvent) {
+    // Get the binding context of the row that was pressed
+    var oContext = oEvent.getParameter("bindingContext");
+    if (!oContext) { return; }
+    
+    this._bApprovalMode = false;
+    this.getView().setBusy(true);
+    this._openEditDialog(oContext);
+
+  },
 
   onTableUpdateFinished: function(oEvent) {
 //--- NOT USED
-
     const oTable = oEvent.getSource();
       var aItems = oTable.getItems();
       var that = this;
@@ -228,7 +227,7 @@ _openEditDialog: function (oContext, bFromScan) {
     this.getView().setBusy(true);
     this._bFromScan    = bFromScan || false;
     const oEquipData   = oContext.getObject();
-    const oHeaderData  = this.getView().getBindingContext().getObject();
+    //const oHeaderData  = this.getView().getBindingContext().getObject();
     const oModel       = this.getView().getModel();
     //fetch existing change rows for this equipment
     const oChangeListBinding = oContext.getModel().bindList("_AuditChanges", oContext);
@@ -241,20 +240,10 @@ _openEditDialog: function (oContext, bFromScan) {
           const oExisting = aExistingChanges.find(c => c.FieldName === cfg.FieldName);
 
           let sPrefillValue;
-          const sHeaderValue = oHeaderData[cfg.EquipField];
           const sMasterValue = oEquipData[cfg.EquipField];
 
-          if (this._bFromScan && oHeaderData && cfg.CoreFlag) {
-            //Prefill with Audit header core data if different from master data
-            //otherwise, prior user chanegs, or master data value
-            sPrefillValue = (sHeaderValue && sHeaderValue !== sMasterValue)
-                            ? sHeaderValue
-                            : (oExisting ? oExisting.NewValue : sMasterValue);
-          } else {
-            //Prior changes or master data
-            sPrefillValue = (oExisting ? oExisting.NewValue : sMasterValue);
-          }
-          let sInitialValue = (oExisting ? oExisting.NewValue : sMasterValue);
+          //Prior changes or master data
+          sPrefillValue = (oExisting ? oExisting.NewValue : sMasterValue);
 
           return {
             fieldName:          cfg.FieldName,
@@ -263,7 +252,7 @@ _openEditDialog: function (oContext, bFromScan) {
             oldValue:           oEquipData[cfg.EquipField],     // always master data
             oldValueText:       oEquipData[cfg.EquipFieldText],
             newValue:           sPrefillValue,
-            initialValue:       sInitialValue,  // changes made in this session
+            initialValue:       sPrefillValue,  // captures changes made in this session
             equipField:         cfg.EquipField,
             valueHelpEntity:    cfg.VhEntity,
             valueHelpKeyField:  cfg.VhKeyField,
@@ -745,11 +734,19 @@ _searchEquipmentMaster: function (sEquipment) {
 
   oListBinding.requestContexts(0, 1).then(aContexts => {
     this.getView().setBusy(false);
+    const bApplyDefaults = this.getView().getBindingContext().getObject().ApplyDefaults;
 
     if (aContexts.length === 1) {
       // found in SAP master data - show details and ask to add
       const oEquip = aContexts[0].getObject();
-      this._showEquipmentFoundConfirmation(sEquipment, oEquip);
+
+      // bypass popup
+      if (bApplyDefaults){
+        this._addEquipmentToAudit(sEquipment);
+      } else {
+        this._showEquipmentFoundConfirmation(sEquipment, oEquip);
+      }
+
     } else {
       // not found in SAP at all - offer Not in SAP option
       this._showNotInSAPConfirmation(sEquipment);
@@ -875,8 +872,14 @@ _highlightItemRow(oContext, bOpenEditDialog){
           if (typeof oTable.setSelectedItem === "function") {
             oTable.setSelectedItem(oRowToSelect, true);
             oTable.fireSelectionChange();
+
+
             if (bOpenEditDialog){
-              this._openEditDialog(oContext, true);   //true: from Scan
+              //If we are in automatic mode, no need to open popup
+              let oHeader = this.getView().getBindingContext().getObject();
+              if (!oHeader.ApplyDefaults){
+                this._openEditDialog(oContext, true);   //true: from Scan
+              }
             }
           }
         }
