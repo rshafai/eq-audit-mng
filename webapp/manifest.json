@@ -165,6 +165,12 @@
               "content": {
                 "header": {
                   "actions": {
+                    "UpdateDefaultValues": {
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onUpdateDefaultValues",
+                      "text": "Update Default Values",
+                      "visible": true,
+                      "enabled": "{= ${isEditable} && ${ApplyDefaults} }"
+                    },
                     "ApproveAllItems": {
                       "id": "ApproveAllItems",
                       "requiresSelection": false,

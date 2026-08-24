@@ -49,7 +49,7 @@ sap.ui.define([
               //Make rows clickable
               const oTableInner = this._getItemsTable(true); // get inner table
               const oTable = this._getItemsTable(); 
-debugger;
+
               if (oTable) {
                 if (oTableInner) {
                   // Captures the rapid local VS Code environment instantly
@@ -681,7 +681,7 @@ _itemSearchServer: function(sEquipment){
       this._bBarCodeSearch = true;
       oRowBinding.detachEvent("change", this._onTableDataChanged, this);
       oRowBinding.attachEvent("change", this._onTableDataChanged, this);
-      oRowBinding.attachEvent("dataReceived", this._onTableDataReceived, this);
+      // oRowBinding.attachEvent("dataReceived", this._onTableDataReceived, this);
 
       //Force trigger item search
       oRowBinding.changeParameters({ "$search": sEquipment});  //force trigger search 
@@ -689,9 +689,9 @@ _itemSearchServer: function(sEquipment){
 },
 
 _onTableDataReceived: function(oEvent){
-  
 },
-_onTableDataChanged: function(oEvent){
+
+  _onTableDataChanged: function(oEvent){
   //Search all items to find a barcode
   if (this._bBarCodeSearch === false) { return; }
   this._bBarCodeSearch = false;
@@ -734,7 +734,8 @@ _searchEquipmentMaster: function (sEquipment) {
 
   oListBinding.requestContexts(0, 1).then(aContexts => {
     this.getView().setBusy(false);
-    const bApplyDefaults = this.getView().getBindingContext().getObject().ApplyDefaults;
+    const oHeader = this.getView().getBindingContext();
+    const bApplyDefaults = oHeader.getObject().ApplyDefaults;
 
     if (aContexts.length === 1) {
       // found in SAP master data - show details and ask to add
@@ -787,7 +788,6 @@ _showEquipmentFoundConfirmation: function (sEquipment, oEquip) {
       } else if (sAction === "Manual Search") {
         this.onAddEquipmentOpen();
       }
-
       // CANCEL: do nothing
     }
   });
@@ -821,6 +821,7 @@ _showNotInSAPConfirmation: function (sEquipment) {
 
 
 //────────────────────────────────────────
+// Clear, reset SAP search
 //────────────────────────────────────────
 onClearSearchFilter: function (oEvent, aContexts)  {
   // Visual Fix: Turn the text button into an icon on the fly
@@ -854,10 +855,6 @@ _highlightItemRow(oContext, bOpenEditDialog){
     
     if (oTable && typeof oTable.getItems === "function") {
       var aItems = oTable.getItems();
-      //reset previously highlighted rows
-      // $.each(aItems, function(index, row){
-      //   row.setHighlight(sap.ui.core.MessageType.None);
-      // });
       oTable.removeSelections(true);
 
       if (oContext){
@@ -866,13 +863,11 @@ _highlightItemRow(oContext, bOpenEditDialog){
         });
         if (oRowToSelect) {
           oRowToSelect.focus();
-          // oRowToSelect.setHighlight(sap.ui.core.MessageType.Success); // Highlight the left border green
 
           // Select the checkbox and open edit/details dialog
           if (typeof oTable.setSelectedItem === "function") {
             oTable.setSelectedItem(oRowToSelect, true);
             oTable.fireSelectionChange();
-
 
             if (bOpenEditDialog){
               //If we are in automatic mode, no need to open popup
@@ -889,6 +884,59 @@ _highlightItemRow(oContext, bOpenEditDialog){
       MessageToast.show("Equipment not loaded or not found in this table. You can use 'Add Equipment' to search SAP master data.");
   }
 },
+
+
+//────────────────────────────────────────
+// Update Default Values
+//────────────────────────────────────────
+onUpdateDefaultValues: function (oContext, aSelectedContexts) {
+  const oHeaderContext = this.getView().getBindingContext();
+  this._loadUpdateDefaultsDialog().then(oDialog => {
+    // bind dialog to header context for two-way binding
+    oDialog.setModel(this.getView().getModel(), "hdrCtx");
+    oDialog.setBindingContext(oHeaderContext, "hdrCtx");
+    oDialog.open();
+  });
+},
+_loadUpdateDefaultsDialog: function () {
+  if (this._oUpdateDefaultsDialog) {
+    return Promise.resolve(this._oUpdateDefaultsDialog);
+  }
+  return Fragment.load({
+    id:         this.getView().getId(),
+    name:       this._fragmentPrefix + "UpdateDefaultsDialog",
+    controller: this
+  }).then(oDialog => {
+    this._oUpdateDefaultsDialog = oDialog;
+    this.getView().addDependent(oDialog);
+    return oDialog;
+  });
+},
+
+onSaveDefaultValues: function () {
+  const oHeaderContext = this.getView().getBindingContext();
+
+  //securedExecution flushes the pending PATCH from two-way bindings
+  this.base.editFlow.securedExecution(
+    () => Promise.resolve(),   //no action needed - framework handles PATCH
+    {
+      updatableObject: oHeaderContext,
+      busyControl: this.getView()
+    }
+  ).then(() => {
+    this._oUpdateDefaultsDialog.close();
+    MessageToast.show("Default values updated successfully.");
+    //no refresh needed - two-way binding already updated the header display
+  });
+},
+
+onCancelDefaultValues: function () {
+  //discard pending changes to header fields
+  const oHeaderContext = this.getView().getBindingContext();
+  oHeaderContext.getModel().resetChanges();
+  this._oUpdateDefaultsDialog.close();
+},
+
 
 //────────────────────────────────────────
 // Post to EMR, Complete Audit Header

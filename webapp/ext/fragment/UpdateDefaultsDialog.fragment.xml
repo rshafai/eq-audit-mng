@@ -1,0 +1,33 @@
+<!-- UpdateDefaultsDialog.fragment.xml -->
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+  <Dialog
+    id="updateDefaultsDialog"
+    title="Update Audit Default Values"
+    contentWidth="30rem">
+    <content>
+      <VBox class="sapUiSmallMargin">
+        <Label text="Maintenance Plant" />
+        <Input value="{hdrCtx>MaintenancePlant}"
+               showValueHelp="true"
+               valueHelpRequest=".onMaintPlantVH" />
+        <Label text="Asset Location" class="sapUiTinyMarginTop"/>
+        <Input value="{hdrCtx>AssetLocation}"
+               showValueHelp="true"
+               valueHelpRequest=".onAssetLocationVH" />
+        <Label text="Asset Room" class="sapUiTinyMarginTop"/>
+        <Input value="{hdrCtx>AssetRoom}" />
+        <Label text="Functional Location" class="sapUiTinyMarginTop"/>
+        <Input value="{hdrCtx>FunctionalLocation}"
+               showValueHelp="true"
+               valueHelpRequest=".onFLocVH" />
+      </VBox>
+    </content>
+    <beginButton>
+      <Button text="Save" type="Emphasized"
+              press=".onSaveDefaultValues" />
+    </beginButton>
+    <endButton>
+      <Button text="Cancel" press=".onCancelDefaultValues" />
+    </endButton>
+  </Dialog>
+</core:FragmentDefinition>
