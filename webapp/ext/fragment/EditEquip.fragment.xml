@@ -115,7 +115,7 @@
     </VBox>
   </content>
   <buttons>
-    <Button id="idButtonValidate" text="Validate"           visible="{isEditable}"                                  press=".onValidateEquipChanges" type="Ghost" />
+    <Button id="idButtonValidate" text="Validate"           visible="{isEditable}"                                  press=".onValidateEquipChanges" type="Ghost" tooltip="Validate in SAP" />
     <Button id="idButtonSave"     text="Save"               visible="{isEditable}"                                  press=".onSaveEquipChanges" type="Emphasized" />
     <Button id="idButtonApprove"  text="Save &amp; Approve" visible="{= ${isEditable} &amp;&amp; ${isSupervisor} }" press=".onSaveAndApprove"   type="Success" />
     <Button id="idButtonCancel"   text="Cancel"             visible="true"                                          press=".onCancelEquipDialog" />

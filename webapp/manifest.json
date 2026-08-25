@@ -70,9 +70,7 @@
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
-        "settings": {
-          "bundleName": "gc.agr.aafc.mm.eqauditmng.i18n.i18n"
-        }
+        "uri": "i18n/i18n.properties"
       },
       "": {
         "dataSource": "mainService",
@@ -168,8 +166,8 @@
                     "UpdateDefaultValues": {
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onUpdateDefaultValues",
                       "text": "Update Default Values",
-                      "visible": true,
-                      "enabled": "{= ${isEditable} && ${ApplyDefaults} }"
+                      "visible": "{= ${isEditable} && ${ApplyDefaults} }",
+                      "enabled": true
                     },
                     "ApproveAllItems": {
                       "id": "ApproveAllItems",
@@ -198,6 +196,7 @@
                     "type": "ResponsiveTable",
                     "rowPress": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onItemRowPress",
                     "groupBy": "" ,
+                    "selectionMode": "Multi",
 
                     "quickVariantSelection": {
                       "showCounts": true,

@@ -28,20 +28,12 @@ sap.ui.define([
              * @memberOf gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt
              */
             onInit: function () {
-              // Set Supervisor/Auditor mode
-              if (1 === 1){
-                this._SuperMode = true;
-              } else {
-                this._SuperMode = false;
-              }
               this.getView().setBusyIndicatorDelay(0);
 
               let oUIModel = new JSONModel({
                 excepMessage: "<p>You can use Exceptions to identify equipment that are not found in SAP.</p>" + 
                               "<p class=\"sapUiLargeMarginBottom\">Please use <strong>Add Equipment</strong> first to search for the equipment in SAP, if found you can add it to the Audit Items list.&nbsp;" + 
-                              "If not found then please report it as an Exception.</p>",
-                // showEdit: false,
-                // showApprove: false
+                              "If not found then please report it as an Exception.</p>"
               });
               this.getView().setModel(oUIModel, "ui");
 
@@ -116,15 +108,15 @@ sap.ui.define([
     var oContext = oEvent.getParameter("bindingContext");
     if (!oContext) { return; }
     
-    this._bApprovalMode = false;
     this.getView().setBusy(true);
     this._openEditDialog(oContext);
 
   },
 
   onTableUpdateFinished: function(oEvent) {
-//--- NOT USED
+//--- Used only in VSCode preview, because the table gets rendered too fast
     const oTable = oEvent.getSource();
+    const oInnerTable = this._getItemsTable(true);
       var aItems = oTable.getItems();
       var that = this;
   
@@ -164,7 +156,6 @@ sap.ui.define([
     if (!oRowContext) { return; }
   
     // open edit dialog
-    this._bApprovalMode = false;
     this.getView().setBusy(true);
     this._openEditDialog(oRowContext);
   },
@@ -176,7 +167,7 @@ sap.ui.define([
       let showEdit = false;
       // let showApprove = false;
 
-      if (aSelectedContexts.length === 1) {
+      if (aSelectedContexts.length === 1) {  //only one item to edit
           const oSelectedData = aSelectedContexts[0].getObject(); 
           const sStatus = oSelectedData.AuditItemStatus;
           showEdit = true; 
@@ -227,8 +218,9 @@ _openEditDialog: function (oContext, bFromScan) {
     this.getView().setBusy(true);
     this._bFromScan    = bFromScan || false;
     const oEquipData   = oContext.getObject();
-    //const oHeaderData  = this.getView().getBindingContext().getObject();
+    const oHeaderData  = this.getView().getBindingContext().getObject();
     const oModel       = this.getView().getModel();
+    
     //fetch existing change rows for this equipment
     const oChangeListBinding = oContext.getModel().bindList("_AuditChanges", oContext);
 
@@ -259,10 +251,10 @@ _openEditDialog: function (oContext, bFromScan) {
             valueHelpDescField: cfg.VhDescField,
           };
         });
-
+        
         this._oDialogModel = new JSONModel({
           fields:       aRows,
-          approvalMode: !!this._SuperMode,
+          approvalMode: oHeaderData.isSupervisor,    // !!this._SuperMode,
           Comments:     oEquipData.Comments        || "",
           EqCondition:  oEquipData.EqCondition     || "",
           Equipment:    oEquipData.Equipment       || "",
