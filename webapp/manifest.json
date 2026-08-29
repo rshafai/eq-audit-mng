@@ -132,15 +132,6 @@
               },
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
-                  "actions": {
-                    "CustomActionKey": {
-                      "text": "Create New Audit",
-                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.AuditHeaderListExt.onCreateNewAudit",
-                      "visible": true,
-                      "enabled": true,
-                      "requiresSelection": false
-                    }
-                  },
                   "tableSettings": {
                     "type": "ResponsiveTable"
                   }

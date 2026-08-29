@@ -232,19 +232,22 @@ _openEditDialog: function (oContext, bFromScan) {
           const oExisting = aExistingChanges.find(c => c.FieldName === cfg.FieldName);
 
           let sPrefillValue;
+          let sOldValue;
           const sMasterValue = oEquipData[cfg.EquipField];
 
           //Prior changes or master data
           sPrefillValue = (oExisting ? oExisting.NewValue : sMasterValue);
+          sOldValue = (oExisting ? oExisting.OldValue : '');
 
           return {
             fieldName:          cfg.FieldName,
             core_flag:          cfg.CoreFlag,
             label:              cfg.LabelEn,
-            oldValue:           oEquipData[cfg.EquipField],     // always master data
-            oldValueText:       oEquipData[cfg.EquipFieldText],
+            msValue:            oEquipData[cfg.EquipField],     // always master data
+            msValueText:        oEquipData[cfg.EquipFieldText],
+            oldValue:           sOldValue,      //show value of the field before changes were posted
             newValue:           sPrefillValue,
-            initialValue:       sPrefillValue,  // captures changes made in this session
+            initialValue:       sPrefillValue,  //used to capture changes made in this session
             equipField:         cfg.EquipField,
             valueHelpEntity:    cfg.VhEntity,
             valueHelpKeyField:  cfg.VhKeyField,
@@ -314,7 +317,7 @@ _openEditDialog: function (oContext, bFromScan) {
   onRevert: function(oEvent){
     const oInput = oEvent.getSource();
     const oRowContext = oInput.getBindingContext("dlg");
-    const sNewValue = oRowContext.getObject()["oldValue"];
+    const sNewValue = oRowContext.getObject()["msValue"];  //oldValue
     const sPath = oRowContext.getPath() + "/newValue";
 
     let oModel = this._oDialog.getModel("dlg");
@@ -365,12 +368,12 @@ _openEditDialog: function (oContext, bFromScan) {
       MessageBox.error("Comments are required when an Exception Type is selected.");
       return;
     }
-  
-    // format: FieldName|OldValue|NewValue|EquipField~FieldName|OldValue|NewValue|EquipField
+
+    // format: FieldName|OldValue|NewValue|EquipField
     const sChangesCSV = aChangedRows
       .map(r => [
         r.fieldName  || "",
-        r.oldValue   || "",
+        r.msValue    || "",    //oldValue
         r.newValue   || "",
         r.equipField || ""
       ].join("|"))
@@ -413,7 +416,7 @@ _openEditDialog: function (oContext, bFromScan) {
 //────────────────────────────────────────
 onValidateEquipChanges: function () {
   const aRows = this._oDialogModel.getProperty("/fields");
-  const aChangedRows = aRows.filter(r => r.newValue !== r.oldValue);  //validate only fields that have different values than master data
+  const aChangedRows = aRows.filter(r => r.newValue !== r.msValue);  //validate only fields that have different values than master data
 
   if (aChangedRows.length === 0) {
     MessageToast.show("No changes to validate.");
@@ -428,7 +431,7 @@ onValidateEquipChanges: function () {
   const sChangesCSV = aChangedRows
     .map(r => [
       r.fieldName  || "",
-      r.oldValue   || "",
+      r.msValue    || "",   //oldValue
       r.newValue   || "",
       r.equipField || ""
     ].join("|"))
@@ -637,7 +640,6 @@ onValidateEquipChanges: function () {
 
     } else {
       var sEquipment = mResult.text.trim();
-      var oExtensionAPI = this.base.getExtensionAPI();
       var oTable = this._getItemsTable();
 
       // Search the item table first
@@ -720,7 +722,8 @@ _searchEquipmentMaster: function (sEquipment) {
     "/ZQMM_R_Equip_BarcodeTR",
     null,
     [],
-    [ new Filter("Equipment", FilterOperator.EQ, sEquipment.padStart(18, '0')) ],  // pad to 18 chars for EQUNR format
+//    [ new Filter("Equipment", FilterOperator.EQ, sEquipment.padStart(18, '0')) ],  // pad to 18 chars for EQUNR format
+      [ new Filter("EquipmentTrim", FilterOperator.EQ, sEquipment) ],  //Some equipment #'s like C610046 do not have padding
     { $select: "Equipment,EquipmentName,MaintPlant,PlantName,Location,LocationName,AssetRoom" }
   );
 
@@ -735,7 +738,7 @@ _searchEquipmentMaster: function (sEquipment) {
 
       // bypass popup
       if (bApplyDefaults){
-        this._addEquipmentToAudit(sEquipment);
+        this._addEquipmentToAudit(sEquipment, true);   //bBarcodeScanned=true
       } else {
         this._showEquipmentFoundConfirmation(sEquipment, oEquip);
       }
@@ -772,7 +775,7 @@ _showEquipmentFoundConfirmation: function (sEquipment, oEquip) {
     emphasizedAction: "Add to Audit",
     onClose: (sAction) => {
       if (sAction === "Add to Audit") {
-        this._addEquipmentToAudit(oEquip.Equipment);
+        this._addEquipmentToAudit(oEquip.Equipment, true);   //bBarcodeScanned=true
 
       } else if (sAction === "Retry Scan") {
         MessageToast.show("Ready to scan. Please scan the barcode again.");
@@ -1083,11 +1086,11 @@ onMasterSearchConfirm: function (oEvent) {
   const oSelectedItem = oEvent.getParameter("selectedItem");
   if (!oSelectedItem) { return; }
   const sEquipment = oSelectedItem.getBindingContext().getProperty("Equipment");
-  this._addEquipmentToAudit(sEquipment);
+  this._addEquipmentToAudit(sEquipment, false);   //bBarcodeScanned=false
 },
 
 onMasterSearch: function (oEvent) {
-  const sValue = oEvent.getParameter("value");
+  const sValue = oEvent.getParameter("value").trim();
   const oBinding = oEvent.getSource().getBinding("items");
   if (!oBinding) { return; }
 
@@ -1109,7 +1112,7 @@ onMasterSearchCancel: function (oEvent) {
 },
 
 
-_addEquipmentToAudit: function (sEquipment) {
+_addEquipmentToAudit: function (sEquipment, bBarcodeScanned) {
   const oHeaderContext = this.getView().getBindingContext();
   const oModel = this.getView().getModel();
 
@@ -1148,7 +1151,8 @@ _addEquipmentToAudit: function (sEquipment) {
   });
 
   const oNewItemContext = oListBinding.create({
-    Equipment: sEquipment
+    Equipment: sEquipment,
+    BarcodeScanned: bBarcodeScanned
   });
 },
 

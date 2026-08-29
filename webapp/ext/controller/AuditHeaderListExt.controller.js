@@ -62,7 +62,7 @@ sap.ui.define([
 		// Called from the manifest-registered button
 		// ----------------------------------------------------------------
 		onCreateNewAuditPressed: function (oEvent) {
-debugger; 
+            // NOT USED
 			this._openEquipmentSelectionDialog();
 		},
 

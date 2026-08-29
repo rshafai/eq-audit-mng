@@ -90,6 +90,7 @@
         <columns>
           <Column><Text text="Field" /></Column>
           <Column><Text text="Current Value in SAP" /></Column>
+          <Column><Text text="Old Value" visible="{= !${isEditable}}"/></Column>
           <Column width="30px"></Column>
           <Column><Text text="New Value" /></Column>
         </columns>
@@ -98,11 +99,18 @@
             <cells>
               <Label text="{dlg>label}" design="Bold" />
               <ObjectStatus 
-                      text="{dlg>oldValue} - {dlg>oldValueText}" 
-                      state="{path: 'dlg>oldValue', formatter: '.formatColumns'}" />
+                      text="{dlg>msValue} - {dlg>msValueText}" 
+                      state="{path: 'dlg>msValue', formatter: '.formatColumns'}" />
+
+              <ObjectStatus 
+                      visible="{= !${isEditable}}"
+                      text="{dlg>oldValue}" 
+                      state="Error" />
 
               
-              <c:Icon src="sap-icon://restart" color="red" visible="{= ${dlg>oldValue}!==${dlg>newValue} }" press="onRevert"></c:Icon>
+              <c:Icon src="sap-icon://restart" color="red" 
+                      visible="{= ${dlg>msValue}!==${dlg>newValue} &amp;&amp; ${isEditable} }" 
+                      press="onRevert" />
               <Input
                 value="{dlg>newValue}"
                 showValueHelp="{= !!${dlg>valueHelpEntity} }"
