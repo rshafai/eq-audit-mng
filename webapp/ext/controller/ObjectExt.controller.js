@@ -242,6 +242,7 @@ _openEditDialog: function (oContext, bFromScan) {
           return {
             fieldName:          cfg.FieldName,
             core_flag:          cfg.CoreFlag,
+            editFlag:           cfg.EditFlag,
             label:              cfg.LabelEn,
             msValue:            oEquipData[cfg.EquipField],     // always master data
             msValueText:        oEquipData[cfg.EquipFieldText],
@@ -939,7 +940,10 @@ onCancelDefaultValues: function () {
 onPostAuditDocument: function (oContext) {
   const oHeaderContext = this.getView().getBindingContext();
   const oModel = this.getView().getModel();
-  const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.postToEMR";
+  const oCombinedFilter = new Filter({
+    filters: [new Filter("AuditItemStatus", FilterOperator.EQ, "030"), new Filter("AuditItemStatus", FilterOperator.EQ, "036")],
+    and: false   //OR
+  });
 
   this.getView().setBusy(true);
 
@@ -947,7 +951,7 @@ onPostAuditDocument: function (oContext) {
     "_AuditItems",
     oHeaderContext,
     [],
-    [ new Filter("AuditItemStatus", FilterOperator.EQ, "030") ]
+    [ oCombinedFilter ]
   );
   
   oItemsBinding.requestContexts(0, 999).then(aContexts => {
@@ -998,11 +1002,19 @@ _executePostToEMR: function () {
     }
   ).then(() => {
     //Remove confirmation message, it gets stuck in buffer
-    const oMessage = sap.ui.getCore().getMessageManager().getMessageModel().getData().filter(m => m.code.includes("ZQMM_AUDIT/021")).pop();
-    if (oMessage) {
-      sap.ui.getCore().getMessageManager().removeMessages(oMessage);
+    const aMessages = sap.ui.getCore().getMessageManager().getMessageModel().getData();
+    const oMessage22 = aMessages.filter(m => m.code && m.code.includes("ZQMM_AUDIT/021") ).pop();
+    if (oMessage22) {
+      sap.ui.getCore().getMessageManager().removeMessages(oMessage22);
     }
     //Remove success messages if there is an error.
+    const oMessage21 = aMessages.filter(m => matchMedia.code && m.code.includes("ZQMM_AUDIT/022") && m.type === "Success").pop();
+    const oError = aMessages.filter(m => m.type === "Error").pop();
+    if (oMessage21 && oError) {
+      sap.ui.getCore().getMessageManager().removeMessages(oMessage21);
+    }
+
+
     oHeaderContext.refresh();
   });
   // no .catch() at all - securedExecution handles error display automatically

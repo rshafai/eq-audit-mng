@@ -261,14 +261,14 @@
                     "BarcodeScan": {
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onBarcodeScan",
                       "visible": true,
-                      "enabled": true,
+                      "enabled": "{isEditable}",
                       "requiresSelection": false,
                       "text": "Barcode Scan"
                     },
                     "AddEquipment": {
                       "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onAddEquipmentOpen",
                       "text": "Add Equipment",
-                      "enabled": true,
+                      "enabled": "{isEditable}",
                       "position": {
                         "placement": "After",
                         "anchor": "EditItem"

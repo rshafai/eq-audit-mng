@@ -113,6 +113,7 @@
                       press="onRevert" />
               <Input
                 value="{dlg>newValue}"
+                editable="{= !!${dlg>editFlag} &amp;&amp; ${isEditable} }"
                 showValueHelp="{= !!${dlg>valueHelpEntity} }"
                 valueHelpRequest=".onGenericVH" />
             </cells>
