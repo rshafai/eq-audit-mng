@@ -397,7 +397,7 @@ sap.ui.define([
           oBinding.setParameter("ChangesCSV", sChangesCSV);  // all changes in one string
           return oBinding.execute();
         },
-        { updatableObject: oItemContext }
+        { updatableObject: oItemContext, busyControl: this._oDialog } //this.getView() }
       ).then(() => {
         this._oDialog.setBusy(false);
         MessageToast.show(bApproveFlag ? "Item approved." : "Changes saved for Equipment: " + sEquipment);
@@ -426,7 +426,9 @@ sap.ui.define([
 
       const oModel = this.getView().getModel();
       const oItemContext = this._oItemContext;
+      const oHeaderContext = this.getView().getBindingContext();
       const sEquipment = this._oDialogModel.getProperty("/Equipment");
+      const sCompanyCode = oHeaderContext.getObject().CompanyCode;
       const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.validateEquipmentChanges";
 
       const sChangesCSV = aChangedRows
@@ -447,6 +449,7 @@ sap.ui.define([
             sActionName + "(...)", oItemContext
           );
           oBinding.setParameter("Equipment", sEquipment || "");
+          oBinding.setParameter("CompanyCode", sCompanyCode || "");
           oBinding.setParameter("EqCondition", this._oDialogModel.getProperty("/EqCondition") || "");
           oBinding.setParameter("Comments", this._oDialogModel.getProperty("/Comments") || "");
           oBinding.setParameter("ExceptionType", this._oDialogModel.getProperty("/ExceptionType") || "");
@@ -455,7 +458,7 @@ sap.ui.define([
           oBinding.setParameter("AutoAudit", false);
           return oBinding.execute();
         },
-        { updatableObject: oItemContext, busyControl: this.getView() }
+        { updatableObject: oItemContext, busyControl: this._oDialog } //this.getView() }
       ).then(() => {
         const aMessages = sap.ui.getCore()
           .getMessageManager()
@@ -725,7 +728,7 @@ sap.ui.define([
         [],
         //    [ new Filter("Equipment", FilterOperator.EQ, sEquipment.padStart(18, '0')) ],  // pad to 18 chars for EQUNR format
         [new Filter("EquipmentTrim", FilterOperator.EQ, sEquipment)],  //Some equipment #'s like C610046 do not have padding
-        { $select: "Equipment,EquipmentName,MaintPlant,PlantName,Location,LocationName,AssetRoom" }
+        { $select: "Equipment,EquipmentName,MaintPlant,PlantName,Location,LocationName,AssetRoom,LatestAuditEditable,LatestAuditDocId" }
       );
 
       oListBinding.requestContexts(0, 1).then(aContexts => {
@@ -734,15 +737,22 @@ sap.ui.define([
         const bApplyDefaults = oHeader.getObject().ApplyDefaults;
 
         if (aContexts.length === 1) {
-          // found in SAP master data - show details and ask to add
+          // found in SAP master data 
           const oEquip = aContexts[0].getObject();
 
-          // bypass popup
-          if (bApplyDefaults || this._suppressConfirmation) {
-            this._addEquipmentToAudit(sEquipment, true);   //bBarcodeScanned=true
+          //Check if it's locked in another audit
+          if (oEquip.LatestAuditEditable){
+            MessageBox.error("The Equipment: " + sEquipment + " (" + oEquip.EquipmentName + ") is locked in the Audit: " + oEquip.LatestAuditDocId + "\n\n and cannot be added to this Audit document.",
+              { title: "Equipment Locked in Another Audit" }
+            );
           } else {
-            this._showItemAddConfirmation(sEquipment, oEquip);
-            //this._showEquipmentFoundConfirmation(sEquipment, oEquip);
+            // bypass popup
+            if (bApplyDefaults || this._suppressConfirmation) {
+              this._addEquipmentToAudit(sEquipment, true);   //bBarcodeScanned=true
+            } else {
+              this._showItemAddConfirmation(sEquipment, oEquip);
+              //this._showEquipmentFoundConfirmation(sEquipment, oEquip);
+            }
           }
 
         } else {
@@ -1075,6 +1085,55 @@ sap.ui.define([
       // no .catch() at all - securedExecution handles error display automatically
     },
 
+    
+    //────────────────────────────────────────  
+    // Delete Items
+    //────────────────────────────────────────
+    onDeleteItems: function (oContext, aSelectedContexts) {
+      if (!aSelectedContexts || aSelectedContexts.length === 0) {
+        MessageToast.show("Please select items to delete.");
+        return;
+      }
+      const oHeaderContext = this.getView().getBindingContext();
+      const nCount = aSelectedContexts.length;
+      const sMessage = nCount === 1
+        ? `Delete the selected audit item? This action cannot be undone.`
+        : `Delete ${nCount} selected audit items? This action cannot be undone.`;
+    
+      MessageBox.warning(sMessage, {
+        title: "Confirm Delete",
+        actions: [MessageBox.Action.DELETE, MessageBox.Action.CANCEL],
+        emphasizedAction: MessageBox.Action.DELETE,
+        onClose: (sAction) => {
+          if (sAction !== MessageBox.Action.DELETE) { return; }
+          this._executeDeleteItems(aSelectedContexts, oHeaderContext);
+        }
+      });
+    },
+    _executeDeleteItems: function (aContexts, oHeaderContext) {
+      this.getView().setBusy(true);
+      // delete each selected item sequentially via securedExecution
+      this.base.editFlow.securedExecution(
+        () => {
+          return aContexts.reduce((oChain, oCtx) => {
+            return oChain.then(() => oCtx.delete("$auto"));
+          }, Promise.resolve());
+        },
+        {
+          updatableObject: oHeaderContext, busyControl: this.getView()
+        }
+      ).then(() => {
+        this.getView().setBusy(false);
+        const sMsg = aContexts.length === 1
+          ? "1 item deleted."
+          : `${aContexts.length} items deleted.`;
+        MessageToast.show(sMsg);
+        oHeaderContext.requestSideEffects(["_AuditItems"]);
+      }).catch(oErr => {
+        this.getView().setBusy(false);
+        MessageBox.error(oErr.message || "Could not delete items.");
+      });
+    },
 
     //────────────────────────────────────────  
     // Approve All Items
@@ -1180,7 +1239,6 @@ sap.ui.define([
 
 
     _addEquipmentToAudit: function (sEquipment, bBarcodeScanned) {
-debugger;
       const oHeaderContext = this.getView().getBindingContext();
       const oModel = this.getView().getModel();
 

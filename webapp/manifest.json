@@ -242,6 +242,26 @@
                       "visible": "{isEditable}",
                       "enabled": "{= ${isEditable} === true && ${ui>/showEdit} === true }"
                     },
+                    "DeleteItems": {
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onDeleteItems",
+                      "text": "Delete Item",
+                      "requiresSelection": true,
+                      "enabled": "{= ${isEditable} === true }",
+                      "visible": true,
+                      "position": {
+                        "placement": "After",
+                        "anchor": "EditItem"
+                      }
+                    },
+                    "AddEquipment": {
+                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onAddEquipmentOpen",
+                      "text": "Add Item",
+                      "enabled": "{isEditable}",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "DeleteItems"
+                      }
+                    },
                     "ApproveMultipleItems": {
                       "id": "ApproveMultipleItems",
                       "requiresSelection": true,
@@ -264,15 +284,6 @@
                       "enabled": "{isEditable}",
                       "requiresSelection": false,
                       "text": "Barcode Scan"
-                    },
-                    "AddEquipment": {
-                      "press": ".extension.gc.agr.aafc.mm.eqauditmng.ext.controller.ObjectExt.onAddEquipmentOpen",
-                      "text": "Add Equipment",
-                      "enabled": "{isEditable}",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "EditItem"
-                      }
                     },
                     "ClearSearchFilterAction": {
                       "text": "Refresh",
