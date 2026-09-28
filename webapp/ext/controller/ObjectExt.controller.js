@@ -241,9 +241,10 @@ sap.ui.define([
 
             return {
               fieldName: cfg.FieldName,
+              fieldDesc: cfg.FieldDescription,
               core_flag: cfg.CoreFlag,
               editFlag: cfg.EditFlag,
-              label: cfg.LabelEn,
+              //label: cfg.LabelEn,
               msValue: oEquipData[cfg.EquipField],     // always master data
               msValueText: oEquipData[cfg.EquipFieldText],
               oldValue: sOldValue,      //show value of the field before changes were posted
@@ -426,9 +427,9 @@ sap.ui.define([
 
       const oModel = this.getView().getModel();
       const oItemContext = this._oItemContext;
-      const oHeaderContext = this.getView().getBindingContext();
+      //const oHeaderContext = this.getView().getBindingContext();
       const sEquipment = this._oDialogModel.getProperty("/Equipment");
-      const sCompanyCode = oHeaderContext.getObject().CompanyCode;
+      //const sCompanyCode = oHeaderContext.getObject().CompanyCode;
       const sActionName = "com.sap.gateway.srvd.zqmm_ui_audit_header.v0001.validateEquipmentChanges";
 
       const sChangesCSV = aChangedRows
@@ -449,7 +450,7 @@ sap.ui.define([
             sActionName + "(...)", oItemContext
           );
           oBinding.setParameter("Equipment", sEquipment || "");
-          oBinding.setParameter("CompanyCode", sCompanyCode || "");
+          //oBinding.setParameter("CompanyCode", sCompanyCode || "");
           oBinding.setParameter("EqCondition", this._oDialogModel.getProperty("/EqCondition") || "");
           oBinding.setParameter("Comments", this._oDialogModel.getProperty("/Comments") || "");
           oBinding.setParameter("ExceptionType", this._oDialogModel.getProperty("/ExceptionType") || "");
@@ -723,12 +724,12 @@ sap.ui.define([
       // exact match search against equipment master
       // using Equipment field directly for precise barcode match
       const oListBinding = oModel.bindList(
-        "/ZQMM_R_Equip_BarcodeTR",
+        "/ZQMM_C_Equip_BarcodeTR",
         null,
         [],
         //    [ new Filter("Equipment", FilterOperator.EQ, sEquipment.padStart(18, '0')) ],  // pad to 18 chars for EQUNR format
         [new Filter("EquipmentTrim", FilterOperator.EQ, sEquipment)],  //Some equipment #'s like C610046 do not have padding
-        { $select: "Equipment,EquipmentName,MaintPlant,PlantName,Location,LocationName,AssetRoom,LatestAuditEditable,LatestAuditDocId" }
+        { $select: "Equipment,EquipmentName,MaintenancePlant,MaintenancePlantName,AssetLocation,AssetLocationName,AssetRoom,LatestAuditEditable,LatestAuditDocId" }
       );
 
       oListBinding.requestContexts(0, 1).then(aContexts => {
@@ -777,10 +778,10 @@ sap.ui.define([
         let oAddItemModel = new JSONModel({
           Equipment: sDisplayEquip,
           EquipmentName: oEquip.EquipmentName,
-          MaintPlant: oEquip.MaintPlant,
-          PlantName: oEquip.PlantName,
-          AssetLocation: oEquip.Location,
-          LocationName: oEquip.LocationName,
+          MaintenancePlant: oEquip.MaintenancePlant,
+          MaintenancePlantName: oEquip.MaintenancePlantName,
+          AssetLocation: oEquip.AssetLocation,
+          AssetLocationName: oEquip.AssetLocationName,
           AssetRoom: oEquip.AssetRoom,
           suppressConfirmation: this._suppressConfirmation
         });
@@ -1173,15 +1174,17 @@ sap.ui.define([
     // Add Equipment
     //────────────────────────────────────────
     onAddEquipmentOpen: function () {
+      const oHeaderContext = this.getView().getBindingContext();
+      const sCompanyCode = oHeaderContext ? oHeaderContext.getProperty("CompanyCode") : null;
+  
       this._loadMasterSearchDialog().then(oDialog => {
         oDialog.setModel(this.getView().getModel());
-        //oDialog.setBindingContext(null);
-
         oDialog.bindElement({ path: "" }); //break header context inheritance - "" means start from root
-
         oDialog.unbindAggregation("items");
+
         oDialog.bindAggregation("items", {
-          path: "/ZQMM_R_Equip_BarcodeTR",
+          path: "/ZQMM_C_Equip_BarcodeTR",
+          filters: sCompanyCode ? [ new Filter("CompanyCode", FilterOperator.EQ, sCompanyCode) ] : [],
           template: new StandardListItem({
             title: "{Equipment} \u2013 {EquipmentName}",
             description: "{Manufacturer} | {ManufacturerSerialNumber}",

@@ -97,7 +97,7 @@
         <items >
           <ColumnListItem>
             <cells>
-              <Label text="{dlg>label}" design="Bold" />
+              <Label text="{dlg>fieldDesc}" design="Bold" />
               <ObjectStatus 
                       text="{dlg>msValue} - {dlg>msValueText}" 
                       state="{path: 'dlg>msValue', formatter: '.formatColumns'}" />

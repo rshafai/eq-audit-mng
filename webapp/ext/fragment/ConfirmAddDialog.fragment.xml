@@ -1,84 +1,89 @@
-<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form">
-  <Dialog
-    id="idAddItemDialog"
-    title="Confirm New item"
-    contentWidth="38rem">
-    <content>
-      <VBox class="sapUiSmallMargin">
-        <Text text="Asset: {addItem>/Equipment} is not in this Audit, but was found in SAP master data:" class="sapUiSmallMarginBottom"/>
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
 
-      <f:Form editable="true">
-                <f:layout>
-                    <!-- Forces the grid layout to maintain columns on all screen sizes -->
-                    <f:ResponsiveGridLayout 
-                        labelSpanXL="4" 
-                        labelSpanL="4" 
-                        labelSpanM="4" 
-                        labelSpanS="4" 
-                        adjustLabelSpan="false"
-                        emptySpanXL="0" 
-                        emptySpanL="0" 
-                        emptySpanM="0" 
-                        emptySpanS="0" 
-                        columnsXL="1" 
-                        columnsL="1" 
-                        columnsM="1" />
-                </f:layout>
-                <f:formContainers>
-                    <f:FormContainer>
-                        <f:formElements>
-                          <f:FormElement>
-                            <f:label>
-                                  <Label text="Equipment" />
-                          </f:label>
-                          <f:fields>
-                                  <Input id="idInput1" value="{addItem>/Equipment} - {addItem>/EquipmentName}"  />
-                          </f:fields>
-                          </f:FormElement>
-                          <f:FormElement>
-                          <f:label>
-                                  <Label text="Maint.Plant" class="sapUiTinyMarginTop"/>
-                          </f:label>
-                          <f:fields>
-                                  <Input id="idInput2" value="{addItem>/MaintPlant} - {addItem>/PlantName}" />
-                          </f:fields>
-                          </f:FormElement>
-                          <f:FormElement>
-                          <f:label>
-                                  <Label text="Asset Location" class="sapUiTinyMarginTop"/>
-                          </f:label>
-                          <f:fields>
-                                  <Input id="idInput3" value="{addItem>/AssetLocation} - {addItem>/LocationName}" />
-                          </f:fields>
-                          </f:FormElement>
+    <Dialog
+        id="idAddItemDialog"
+        title="Confirm New Item"
+        contentWidth="38rem">
 
-                          <f:FormElement>
-                          <f:label>
-                                  <Label text="Asset Room" class="sapUiTinyMarginTop"/>
-                          </f:label>
-                          <f:fields>
-                                  <Input id="idInput4" value="{addItem>/AssetRoom}" />
-                          </f:fields>
-                          </f:FormElement>
-                      </f:formElements>
-                    </f:FormContainer>
-                </f:formContainers>
-            </f:Form>
+        <content>
+            <VBox class="sapUiSmallMargin">
 
-        <Text text="Would you like to add this equipment to the Audit?" class="sapUiSmallMarginTop"/> 
-      </VBox>
-      <!-- </f:content> -->
-    <!-- </f:SimpleForm> -->
-    </content>
-    <footer>
-      <OverflowToolbar>
-        <CheckBox id="idRememberMe" text="Bypass this confirmation" selected="{addItem>/suppressConfirmation}" />
-              
-        <ToolbarSpacer />
-        <Button text="Add to Audit" press=".onAddItemConfirmed" type="Emphasized"  />
-        <Button text="Retry Scan"   press=".onBarcodeScan"  />
-        <Button text="Cancel"       press=".onCancelAddItem" />
-      </OverflowToolbar>
-    </footer>
-  </Dialog>
+                <Text
+                    text="Asset {addItem>/Equipment} is not in this Audit, but was found in SAP master data:"
+                    class="sapUiMediumMarginBottom" />
+
+                <!-- Equipment -->
+                <HBox class="sapUiTinyMarginBottom">
+                    <Label design="Bold"
+                        text="Equipment"
+                        width="8rem" />
+                    <Text
+                        text="{addItem>/Equipment} - {addItem>/EquipmentName}"
+                        class="sapUiTinyMarginBegin" />
+                </HBox>
+
+                <!-- Maintenance Plant -->
+                <HBox class="sapUiTinyMarginBottom">
+                    <Label design="Bold"
+                        text="Maint. Plant" 
+                        width="8rem" />
+                    <Text 
+                        text="{addItem>/MaintenancePlant} - {addItem>/MaintenancePlantName}"
+                        class="sapUiTinyMarginBegin" />
+                </HBox>
+
+                <!-- Asset Location -->
+                <HBox class="sapUiTinyMarginBottom">
+                    <Label design="Bold"
+                        text="Asset Location"
+                        width="8rem" />
+                    <Text
+                        text="{addItem>/AssetLocation} - {addItem>/AssetLocationName}"
+                        class="sapUiTinyMarginBegin" />
+                </HBox>
+
+                <!-- Asset Room -->
+                <HBox class="sapUiTinyMarginBottom">
+                    <Label design="Bold"
+                        text="Asset Room"
+                        width="8rem" />
+                    <Text
+                        text="{addItem>/AssetRoom}"
+                        class="sapUiTinyMarginBegin" />
+                </HBox>
+
+                <Text
+                    text="Would you like to add this equipment to the Audit?"
+                    class="sapUiSmallMarginTop sapUiSmallMarginBottom" />
+
+            </VBox>
+        </content>
+
+        <footer>
+            <OverflowToolbar>
+                <CheckBox
+                    id="idRememberMe"
+                    text="Bypass this popup in future"
+                    selected="{addItem>/suppressConfirmation}" />
+
+                <ToolbarSpacer />
+
+                <Button
+                    text="Add to Audit"
+                    press=".onAddItemConfirmed"
+                    type="Emphasized" />
+
+                <Button
+                    text="Retry Scan"
+                    press=".onBarcodeScan" />
+
+                <Button
+                    text="Cancel"
+                    press=".onCancelAddItem" />
+            </OverflowToolbar>
+        </footer>
+
+    </Dialog>
 </core:FragmentDefinition>

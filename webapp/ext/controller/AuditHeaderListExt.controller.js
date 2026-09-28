@@ -106,8 +106,8 @@ sap.ui.define([
                             new Text({ text: "{equipModel>Equipment}" }),
                             new Text({ text: "{equipModel>EquipmentName}" }),
                             new Text({ text: "{equipModel>TechnicalObjectType}" }),
-                            new Text({ text: "{equipModel>MaintPlant}" }),
-                            new Text({ text: "{equipModel>Location}" }),
+                            new Text({ text: "{equipModel>MaintenancePlant}" }),
+                            new Text({ text: "{equipModel>AssetLocation}" }),
 							new Text({ text: "{equipModel>FunctionalLocation}" })
                         ]
                     })
@@ -163,7 +163,7 @@ sap.ui.define([
 			this._oEquipModel.setProperty("/busy", true);
 
 			var oListBinding = oModel.bindList("/EquipBarcode", null, null, null, {
-				$select: "Equipment,EquipmentName,TechnicalObjectType,FunctionalLocation,MaintPlant,Location"
+				$select: "Equipment,EquipmentName,TechnicalObjectType,FunctionalLocation,MaintenancePlant,AssetLocation"
 			});
 
 			return oListBinding
@@ -194,7 +194,7 @@ sap.ui.define([
                 ? aAll.filter(function (oItem) {
                     return (oItem.Equipment    || "").toLowerCase().includes(sQuery) ||
                            (oItem.EquipmentName|| "").toLowerCase().includes(sQuery) ||
-						   (oItem.MaintPlant   || "").toLowerCase().includes(sQuery);
+						   (oItem.MaintenancePlant   || "").toLowerCase().includes(sQuery);
                 })
                 : aAll;
 
